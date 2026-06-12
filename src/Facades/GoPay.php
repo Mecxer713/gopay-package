@@ -1,6 +1,6 @@
 <?php
 
-namespace Gooomart\GoPay\Facades;
+namespace Mecxer713\GoPay\Facades;
 
 use Illuminate\Support\Facades\Facade;
 

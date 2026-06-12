@@ -1,6 +1,6 @@
 <?php
 
-namespace Gooomart\GoPay\Symfony;
+namespace Mecxer713\GoPay\Symfony;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 

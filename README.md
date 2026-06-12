@@ -7,7 +7,7 @@ Ce package permet une intégration rapide et facile de l'API GoPAY (Paiement et 
 Installez le package via Composer :
 
 ```bash
-composer require gooomart/gopay-php
+composer require mecxer713/gopay-php
 ```
 
 ## Intégration Laravel
@@ -15,7 +15,7 @@ composer require gooomart/gopay-php
 ### 1. Configuration
 Publiez le fichier de configuration :
 ```bash
-php artisan vendor:publish --provider="Gooomart\GoPay\GoPayServiceProvider" --tag="config"
+php artisan vendor:publish --provider="Mecxer713\GoPay\GoPayServiceProvider" --tag="config"
 ```
 
 Ajoutez vos clés dans le fichier `.env` :
@@ -31,7 +31,7 @@ GOPAY_PAYOUT_SECRET_KEY="votre_cle_secrete_payout"
 Vous pouvez utiliser la Facade `GoPay` ou l'injection de dépendances :
 
 ```php
-use Gooomart\GoPay\Facades\GoPay;
+use Mecxer713\GoPay\Facades\GoPay;
 
 // Paiement
 $response = GoPay::initPayment(500, 'CDF', '+24399000000', 'ref-1234');
@@ -49,7 +49,7 @@ Activez le Bundle dans votre fichier `config/bundles.php` (si Flex ne l'a pas fa
 ```php
 return [
     // ...
-    Gooomart\GoPay\Symfony\GoPayBundle::class => ['all' => true],
+    Mecxer713\GoPay\Symfony\GoPayBundle::class => ['all' => true],
 ];
 ```
 
@@ -73,13 +73,13 @@ GOPAY_PAYOUT_SECRET_KEY="votre_cle_secrete_payout"
 ```
 
 ### 2. Utilisation
-Utilisez l'injection de dépendances (`Gooomart\GoPay\GoPayService`) dans vos contrôleurs ou services :
+Utilisez l'injection de dépendances (`Mecxer713\GoPay\GoPayService`) dans vos contrôleurs ou services :
 
 ```php
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Gooomart\GoPay\GoPayService;
+use Mecxer713\GoPay\GoPayService;
 
 class PaymentController extends AbstractController
 {
@@ -103,7 +103,7 @@ Vous pouvez également utiliser le SDK sans framework :
 ```php
 require 'vendor/autoload.php';
 
-use Gooomart\GoPay\GoPayService;
+use Mecxer713\GoPay\GoPayService;
 
 $goPay = new GoPayService(
     'https://gopay.gooomart.com',

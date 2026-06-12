@@ -1,6 +1,6 @@
 <?php
 
-namespace Gooomart\GoPay;
+namespace Mecxer713\GoPay;
 
 use Illuminate\Support\ServiceProvider;
 

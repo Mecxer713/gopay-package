@@ -1,8 +1,8 @@
 <?php
 
-namespace Gooomart\GoPay\Symfony\DependencyInjection;
+namespace Mecxer713\GoPay\Symfony\DependencyInjection;
 
-use Gooomart\GoPay\GoPayService;
+use Mecxer713\GoPay\GoPayService;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 

@@ -1,38 +1,56 @@
 {
-    "name": "gooomart/gopay-php",
-    "description": "Un package PHP (Laravel & Symfony) pour intégrer l'API GoPAY",
+    "name": "mecxer713/gopay-php",
+    "description": "Un package PHP universel (Laravel & Symfony) pour intégrer l'API GoPAY",
     "type": "library",
-    "keywords": ["gopay", "payment", "payout", "laravel", "symfony", "api"],
+    "keywords": [
+        "gopay", 
+        "payment", 
+        "payout", 
+        "laravel", 
+        "symfony", 
+        "api", 
+        "mobile-money", 
+        "fintech"
+    ],
+    "homepage": "https://gopay.gooomart.com",
     "license": "MIT",
     "authors": [
         {
-            "name": "Gooomart",
-            "email": "contact@gooomart.com"
+            "name": "Mecxer713",
+            "email": "mecxer@gmail.com",
+            "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/Mecxer713/gopay-php/issues",
+        "source": "https://github.com/Mecxer713/gopay-php"
+    },
     "require": {
         "php": "^8.0",
         "guzzlehttp/guzzle": "^7.2"
     },
     "require-dev": {
         "illuminate/support": "^9.0|^10.0|^11.0",
+        "symfony/config": "^5.4|^6.0|^7.0",
         "symfony/dependency-injection": "^5.4|^6.0|^7.0",
-        "symfony/http-kernel": "^5.4|^6.0|^7.0",
-        "symfony/config": "^5.4|^6.0|^7.0"
+        "symfony/http-kernel": "^5.4|^6.0|^7.0"
     },
     "autoload": {
         "psr-4": {
-            "Gooomart\\GoPay\\": "src/"
+            "Mecxer713\\GoPay\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Gooomart\\GoPay\\GoPayServiceProvider"
+                "Mecxer713\\GoPay\\GoPayServiceProvider"
             ],
             "aliases": {
-                "GoPay": "Gooomart\\GoPay\\Facades\\GoPay"
+                "GoPay": "Mecxer713\\GoPay\\Facades\\GoPay"
             }
         }
+    },
+    "config": {
+        "sort-packages": true
     }
 }

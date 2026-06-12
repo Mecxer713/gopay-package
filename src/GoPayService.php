@@ -3,22 +3,25 @@
 namespace Mecxer713\GoPay;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
-use Exception;
+use Mecxer713\GoPay\Exception\GoPayException;
+use Mecxer713\GoPay\Exception\ConfigurationException;
 
 class GoPayService
 {
-    protected Client $client;
+    protected ClientInterface $client;
 
     public function __construct(
         protected string $baseUrl = 'https://gopay.gooomart.com',
         protected string $paymentApiKey = '',
         protected string $paymentSecretKey = '',
         protected string $payoutApiKey = '',
-        protected string $payoutSecretKey = ''
+        protected string $payoutSecretKey = '',
+        ?ClientInterface $client = null
     ) {
         $this->baseUrl = rtrim($this->baseUrl, '/');
-        $this->client = new Client([
+        $this->client = $client ?? new Client([
             'base_uri' => $this->baseUrl,
             'timeout'  => 30.0,
         ]);
@@ -33,7 +36,7 @@ class GoPayService
      * @param string $myref La référence interne de la transaction
      * @param string|null $usersId Optionnel. ID de l'utilisateur pour lier la transaction.
      * @return array
-     * @throws Exception
+     * @throws GoPayException
      */
     public function initPayment(float $amount, string $devise, string $telephone, string $myref, ?string $usersId = null): array
     {
@@ -57,7 +60,7 @@ class GoPayService
      *
      * @param string $ref La référence de la transaction
      * @return array
-     * @throws Exception
+     * @throws GoPayException
      */
     public function checkPayment(string $ref): array
     {
@@ -69,7 +72,7 @@ class GoPayService
      * Récupère le solde de votre Wallet Payout.
      *
      * @return array
-     * @throws Exception
+     * @throws GoPayException
      */
     public function getPayoutBalance(): array
     {
@@ -81,7 +84,7 @@ class GoPayService
      * Affiche la liste de vos transferts d'argent (Payouts).
      *
      * @return array
-     * @throws Exception
+     * @throws GoPayException
      */
     public function getPayoutTransfers(): array
     {
@@ -98,7 +101,7 @@ class GoPayService
      * @param array $myrefs Tableau de références de transaction
      * @param string|null $dateDenvoi Optionnel, planifie l’envoi à une date précise (Y/m/d H:i)
      * @return array
-     * @throws Exception
+     * @throws GoPayException
      */
     public function sendPayoutTransfer(float $montant, string $devise, array $telephones, array $myrefs, ?string $dateDenvoi = null): array
     {
@@ -122,7 +125,7 @@ class GoPayService
      *
      * @param string $transIdOrMyref L'identifiant de la transaction (TRANS_ID ou myref)
      * @return array
-     * @throws Exception
+     * @throws GoPayException
      */
     public function getPayoutTransferStatus(string $transIdOrMyref): array
     {
@@ -135,7 +138,7 @@ class GoPayService
      *
      * @param string $transId L'identifiant de la transaction
      * @return array
-     * @throws Exception
+     * @throws GoPayException
      */
     public function deletePayoutTransfer(string $transId): array
     {
@@ -151,7 +154,7 @@ class GoPayService
      * @param array $payload Les paramètres de la requête
      * @param string $type Le type d'API ('payment' ou 'payout')
      * @return array
-     * @throws Exception
+     * @throws GoPayException|ConfigurationException
      */
     protected function sendRequest(string $method, string $endpoint, array $payload, string $type): array
     {
@@ -159,7 +162,7 @@ class GoPayService
         $secretKey = $type === 'payment' ? $this->paymentSecretKey : $this->payoutSecretKey;
 
         if (empty($apiKey) || empty($secretKey)) {
-            throw new Exception("Les clés API pour {$type} ne sont pas configurées.");
+            throw new ConfigurationException("Les clés API pour {$type} ne sont pas configurées.");
         }
 
         $nonce = bin2hex(random_bytes(16));
@@ -195,10 +198,17 @@ class GoPayService
 
         try {
             $response = $this->client->request($method, $endpoint, $options);
-            return json_decode($response->getBody()->getContents(), true) ?? [];
+            $content = $response->getBody()->getContents();
+            
+            if (empty($content)) {
+                return [];
+            }
+            
+            return json_decode($content, true, 512, JSON_THROW_ON_ERROR);
         } catch (GuzzleException $e) {
-            // Vous pouvez attraper et relancer une exception personnalisée ici
-            throw new Exception("Erreur de requête HTTP: " . $e->getMessage(), $e->getCode(), $e);
+            throw new GoPayException("Erreur de requête HTTP: " . $e->getMessage(), $e->getCode(), $e);
+        } catch (\JsonException $e) {
+            throw new GoPayException("Erreur de décodage JSON de la réponse: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
 }

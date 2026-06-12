@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Mecxer713\GoPay\Symfony\DependencyInjection;
 
 use Mecxer713\GoPay\GoPayService;
@@ -11,7 +13,7 @@ class GoPayExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
-        $configuration = new Configuration();
+        $configuration = new Configuration;
         $config = $this->processConfiguration($configuration, $configs);
 
         $definition = new Definition(GoPayService::class, [
@@ -19,7 +21,7 @@ class GoPayExtension extends Extension
             $config['api_key'],
             $config['secret_key'],
             $config['payout_api_key'],
-            $config['payout_secret_key']
+            $config['payout_secret_key'],
         ]);
 
         $container->setDefinition(GoPayService::class, $definition);

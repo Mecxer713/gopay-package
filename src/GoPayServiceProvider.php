@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Mecxer713\GoPay;
 
 use Illuminate\Support\ServiceProvider;
@@ -13,7 +15,7 @@ class GoPayServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/gopay.php' => config_path('gopay.php'),
+                __DIR__.'/../config/gopay.php' => config_path('gopay.php'),
             ], 'config');
         }
     }
@@ -23,11 +25,11 @@ class GoPayServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/gopay.php', 'gopay');
+        $this->mergeConfigFrom(__DIR__.'/../config/gopay.php', 'gopay');
 
-        $this->app->singleton('gopay', function ($app) {
+        $this->app->singleton(GoPayServiceInterface::class, function ($app) {
             $config = $app['config']->get('gopay');
-            
+
             return new GoPayService(
                 $config['base_url'] ?? 'https://gopay.gooomart.com',
                 $config['api_key'] ?? '',
@@ -36,5 +38,7 @@ class GoPayServiceProvider extends ServiceProvider
                 $config['payout_secret_key'] ?? ''
             );
         });
+
+        $this->app->alias(GoPayServiceInterface::class, 'gopay');
     }
 }

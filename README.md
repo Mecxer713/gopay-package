@@ -35,9 +35,12 @@ use Mecxer713\GoPay\Facades\GoPay;
 
 // Paiement
 $response = GoPay::initPayment(500, 'CDF', '+24399000000', 'ref-1234');
+echo $response->status; // "success"
+echo $response->transId;
 
 // Payout
-$balance = GoPay::getPayoutBalance();
+$balanceResponse = GoPay::getPayoutBalance();
+echo $balanceResponse->balance;
 ```
 
 ---
@@ -79,17 +82,19 @@ Utilisez l'injection de dépendances (`Mecxer713\GoPay\GoPayService`) dans vos c
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Mecxer713\GoPay\GoPayService;
+use Mecxer713\GoPay\GoPayServiceInterface;
 
 class PaymentController extends AbstractController
 {
-    public function index(GoPayService $goPayService)
+    public function index(GoPayServiceInterface $goPayService)
     {
         // Paiement
         $response = $goPayService->initPayment(500, 'CDF', '+24399000000', 'ref-1234');
+        $transId = $response->transId;
 
         // Payout
-        $balance = $goPayService->getPayoutBalance();
+        $balanceResponse = $goPayService->getPayoutBalance();
+        $balance = $balanceResponse->balance;
     }
 }
 ```
@@ -141,3 +146,28 @@ Voici la liste de toutes les méthodes que vous pouvez appeler depuis l'instance
   Affiche le statut actuel d'un transfert d'argent spécifique (`EN ATTENTE`, `TRAITÉE`, `REJETÉE`).
 - **`deletePayoutTransfer(string $transId)`**
   Permet d'annuler et de supprimer un transfert d'argent (seulement s'il est au statut `EN ATTENTE`).
+
+---
+
+## Retours de l'API (DTOs)
+
+Toutes les méthodes de paiement et de payout (à l'exception de `getPayoutTransfers`) retournent désormais des objets DTO fortement typés :
+- `Mecxer713\GoPay\DTO\PaymentResponse`
+- `Mecxer713\GoPay\DTO\PayoutBalanceResponse`
+- `Mecxer713\GoPay\DTO\PayoutTransferResponse`
+
+Cela permet une meilleure autocomplétion et évite les erreurs d'accès aux tableaux.
+Par exemple, pour accéder au statut : `$response->status` au lieu de `$response['status']`.
+
+---
+
+## Tests
+
+Le SDK utilise **Pest PHP** pour les tests automatisés.
+Pour exécuter la suite de tests :
+
+```bash
+composer test
+# ou
+./vendor/bin/pest
+```

@@ -31,6 +31,9 @@
     },
     "require-dev": {
         "illuminate/support": "^9.0|^10.0|^11.0",
+        "laravel/pint": "^1.29",
+        "pestphp/pest": "^4.7",
+        "phpstan/phpstan": "^2.2",
         "symfony/config": "^5.4|^6.0|^7.0",
         "symfony/dependency-injection": "^5.4|^6.0|^7.0",
         "symfony/http-kernel": "^5.4|^6.0|^7.0"
@@ -38,6 +41,11 @@
     "autoload": {
         "psr-4": {
             "Mecxer713\\GoPay\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
         }
     },
     "extra": {
@@ -50,7 +58,16 @@
             }
         }
     },
+    "scripts": {
+        "test": "pest",
+        "analyse": "phpstan analyse",
+        "format": "pint",
+        "format:test": "pint --test"
+    },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     }
 }

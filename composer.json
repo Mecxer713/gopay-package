@@ -1,0 +1,38 @@
+{
+    "name": "gooomart/gopay-php",
+    "description": "Un package PHP (Laravel & Symfony) pour intégrer l'API GoPAY",
+    "type": "library",
+    "keywords": ["gopay", "payment", "payout", "laravel", "symfony", "api"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Gooomart",
+            "email": "contact@gooomart.com"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "guzzlehttp/guzzle": "^7.2"
+    },
+    "require-dev": {
+        "illuminate/support": "^9.0|^10.0|^11.0",
+        "symfony/dependency-injection": "^5.4|^6.0|^7.0",
+        "symfony/http-kernel": "^5.4|^6.0|^7.0",
+        "symfony/config": "^5.4|^6.0|^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gooomart\\GoPay\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Gooomart\\GoPay\\GoPayServiceProvider"
+            ],
+            "aliases": {
+                "GoPay": "Gooomart\\GoPay\\Facades\\GoPay"
+            }
+        }
+    }
+}

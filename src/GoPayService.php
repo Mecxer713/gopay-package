@@ -12,6 +12,7 @@ use Mecxer713\GoPay\DTO\PaymentResponse;
 use Mecxer713\GoPay\DTO\PayoutBalanceResponse;
 use Mecxer713\GoPay\DTO\PayoutTransferResponse;
 use Mecxer713\GoPay\Exception\ConfigurationException;
+use Mecxer713\GoPay\Exception\GoPayApiException;
 use Mecxer713\GoPay\Exception\GoPayException;
 
 class GoPayService implements GoPayServiceInterface
@@ -212,7 +213,19 @@ class GoPayService implements GoPayServiceInterface
                 return [];
             }
 
-            return json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+            $responseData = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+            
+            // Check if response contains an error even on HTTP 200
+            if (is_array($responseData) && (isset($responseData['error_code']) || (isset($responseData['success']) && $responseData['success'] === false))) {
+                $errorMessage = $responseData['message'] ?? 'Erreur inattendue de l\'API GoPAY.';
+                $errorCode = $responseData['error_code'] ?? null;
+                if ($errorCode !== null) {
+                    $errorMessage = sprintf('[%s] %s', $errorCode, $errorMessage);
+                }
+                throw new GoPayApiException($errorMessage, $response->getStatusCode(), $responseData);
+            }
+
+            return is_array($responseData) ? $responseData : [];
         } catch (GuzzleException $e) {
             if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
                 try {
@@ -222,7 +235,15 @@ class GoPayService implements GoPayServiceInterface
                         $statusCode = $response->getStatusCode();
                         $responseData = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
                         
-                        return is_array($responseData) ? $responseData : [];
+                        if (is_array($responseData)) {
+                            $errorMessage = $responseData['message'] ?? 'Erreur lors de la requête API.';
+                            $errorCode = $responseData['error_code'] ?? null;
+                            if ($errorCode !== null) {
+                                $errorMessage = sprintf('[%s] %s', $errorCode, $errorMessage);
+                            }
+                            
+                            throw new GoPayApiException($errorMessage, $statusCode, $responseData, $e);
+                        }
                     }
                 } catch (\JsonException $jsonException) {
                     // Si on n'arrive pas à parser l'erreur en JSON, on laisse passer pour lancer GoPayException

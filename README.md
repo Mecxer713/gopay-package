@@ -161,6 +161,31 @@ Par exemple, pour accéder au statut : `$response->status` au lieu de `$response
 
 ---
 
+## Gestion des Erreurs
+
+En cas d'erreur de la part de l'API GoPAY (HTTP 4xx ou 5xx), le package lève une exception spécifique `Mecxer713\GoPay\Exception\GoPayApiException`.
+
+Vous pouvez l'attraper pour récupérer le code de statut HTTP ou le message détaillé renvoyé par l'API :
+
+```php
+use Mecxer713\GoPay\Exception\GoPayApiException;
+
+try {
+    $response = GoPay::initPayment(500, 'CDF', '+24399000000', 'ref-1234');
+} catch (GoPayApiException $e) {
+    // Message de l'API (ex: "Solde insuffisant")
+    echo $e->getMessage(); 
+    
+    // Code d'erreur HTTP (ex: 400)
+    echo $e->getCode(); 
+    
+    // Les données brutes retournées par l'API
+    $errorData = $e->getResponseData(); 
+}
+```
+
+---
+
 ## Tests
 
 Le SDK utilise **Pest PHP** pour les tests automatisés.

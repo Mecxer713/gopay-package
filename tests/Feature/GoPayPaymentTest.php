@@ -22,7 +22,6 @@ it('can initialize a payment', function () {
         'test_api_key',
         'test_secret_key',
         'test_payout_api_key',
-        'test_payout_secret_key',
         $client
     );
 
@@ -47,7 +46,6 @@ it('can check a payment status', function () {
         'test_api_key',
         'test_secret_key',
         'test_payout_api_key',
-        'test_payout_secret_key',
         $client
     );
 

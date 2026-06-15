@@ -24,7 +24,6 @@ GOPAY_BASE_URL="https://gopay.gooomart.com"
 GOPAY_API_KEY="votre_cle_api_standard"
 GOPAY_SECRET_KEY="votre_cle_secrete_standard"
 GOPAY_PAYOUT_API_KEY="votre_cle_api_payout"
-GOPAY_PAYOUT_SECRET_KEY="votre_cle_secrete_payout"
 ```
 
 ### 2. Utilisation
@@ -63,7 +62,6 @@ go_pay:
     api_key: '%env(GOPAY_API_KEY)%'
     secret_key: '%env(GOPAY_SECRET_KEY)%'
     payout_api_key: '%env(GOPAY_PAYOUT_API_KEY)%'
-    payout_secret_key: '%env(GOPAY_PAYOUT_SECRET_KEY)%'
 ```
 
 Ajoutez vos clés dans votre `.env` :
@@ -72,7 +70,6 @@ GOPAY_BASE_URL="https://gopay.gooomart.com"
 GOPAY_API_KEY="votre_cle_api_standard"
 GOPAY_SECRET_KEY="votre_cle_secrete_standard"
 GOPAY_PAYOUT_API_KEY="votre_cle_api_payout"
-GOPAY_PAYOUT_SECRET_KEY="votre_cle_secrete_payout"
 ```
 
 ### 2. Utilisation
@@ -114,8 +111,7 @@ $goPay = new GoPayService(
     'https://gopay.gooomart.com',
     'api_key',
     'secret_key',
-    'payout_api_key',
-    'payout_secret_key'
+    'payout_api_key'
 );
 
 $balance = $goPay->getPayoutBalance();

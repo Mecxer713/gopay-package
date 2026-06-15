@@ -17,7 +17,6 @@ class Configuration implements ConfigurationInterface
             ->scalarNode('api_key')->defaultValue('')->end()
             ->scalarNode('secret_key')->defaultValue('')->end()
             ->scalarNode('payout_api_key')->defaultValue('')->end()
-            ->scalarNode('payout_secret_key')->defaultValue('')->end()
             ->end();
 
         return $treeBuilder;

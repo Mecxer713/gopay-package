@@ -34,8 +34,7 @@ class GoPayServiceProvider extends ServiceProvider
                 $config['base_url'] ?? 'https://gopay.gooomart.com',
                 $config['api_key'] ?? '',
                 $config['secret_key'] ?? '',
-                $config['payout_api_key'] ?? '',
-                $config['payout_secret_key'] ?? ''
+                $config['payout_api_key'] ?? ''
             );
         });
 

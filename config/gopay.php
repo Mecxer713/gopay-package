@@ -31,5 +31,4 @@ return [
     |
     */
     'payout_api_key' => env('GOPAY_PAYOUT_API_KEY'),
-    'payout_secret_key' => env('GOPAY_PAYOUT_SECRET_KEY'),
 ];

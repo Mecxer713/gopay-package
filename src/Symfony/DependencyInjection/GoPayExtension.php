@@ -21,7 +21,6 @@ class GoPayExtension extends Extension
             $config['api_key'],
             $config['secret_key'],
             $config['payout_api_key'],
-            $config['payout_secret_key'],
         ]);
 
         $container->setDefinition(GoPayService::class, $definition);

@@ -20,7 +20,7 @@ it('can get payout balance', function () {
 
     $service = new GoPayService(
         'https://gopay.gooomart.com',
-        '', '', 'test_payout_api_key', 'test_payout_secret_key',
+        '', 'test_secret_key', 'test_payout_api_key',
         $client
     );
 
@@ -42,7 +42,7 @@ it('can send a payout transfer', function () {
 
     $service = new GoPayService(
         'https://gopay.gooomart.com',
-        '', '', 'test_payout_api_key', 'test_payout_secret_key',
+        '', 'test_secret_key', 'test_payout_api_key',
         $client
     );
 

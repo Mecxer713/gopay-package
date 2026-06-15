@@ -23,7 +23,6 @@ class GoPayService implements GoPayServiceInterface
         protected string $paymentApiKey = '',
         protected string $paymentSecretKey = '',
         protected string $payoutApiKey = '',
-        protected string $payoutSecretKey = '',
         ?ClientInterface $client = null
     ) {
         $this->baseUrl = rtrim($this->baseUrl, '/');
@@ -168,7 +167,7 @@ class GoPayService implements GoPayServiceInterface
     protected function sendRequest(string $method, string $endpoint, array $payload, string $type): array
     {
         $apiKey = $type === 'payment' ? $this->paymentApiKey : $this->payoutApiKey;
-        $secretKey = $type === 'payment' ? $this->paymentSecretKey : $this->payoutSecretKey;
+        $secretKey = $this->paymentSecretKey;
 
         if (empty($apiKey) || empty($secretKey)) {
             throw new ConfigurationException("Les clés API pour {$type} ne sont pas configurées.");

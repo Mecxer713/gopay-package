@@ -222,12 +222,7 @@ class GoPayService implements GoPayServiceInterface
                         $statusCode = $response->getStatusCode();
                         $responseData = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
                         
-                        throw new \Mecxer713\GoPay\Exception\GoPayApiException(
-                            "Erreur API GoPAY: " . ($responseData['message'] ?? $e->getMessage()),
-                            $statusCode,
-                            is_array($responseData) ? $responseData : [],
-                            $e
-                        );
+                        return is_array($responseData) ? $responseData : [];
                     }
                 } catch (\JsonException $jsonException) {
                     // Si on n'arrive pas à parser l'erreur en JSON, on laisse passer pour lancer GoPayException

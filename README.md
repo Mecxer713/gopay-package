@@ -1,53 +1,134 @@
-# GoPay PHP SDK (Laravel & Symfony)
+<div align="center">
 
-Ce package permet une intégration rapide et facile de l'API GoPAY (Paiement et Payout) pour vos projets PHP, avec un support natif pour **Laravel** et **Symfony**.
+# GoPay PHP SDK
 
-## Installation
+**SDK PHP officiel pour l'API GoPAY — Paiement & Payout Mobile Money**
 
-Installez le package via Composer :
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/mecxer713/gopay-php.svg?style=flat-square)](https://packagist.org/packages/mecxer713/gopay-php)
+[![PHP Version](https://img.shields.io/badge/PHP-%5E8.1-blue?style=flat-square&logo=php)](https://www.php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-9%2B%20%7C%2010%2B%20%7C%2011%2B-orange?style=flat-square&logo=laravel)](https://laravel.com)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen?style=flat-square)](https://github.com/Mecxer713/gopay-php)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+
+Intégrez l'API GoPAY en quelques minutes dans vos projets **PHP natif**, **Laravel** ou **Symfony**.
+
+[Installation](#-installation) · [Démarrage rapide](#-démarrage-rapide) · [Laravel](#-laravel) · [Symfony](#-symfony) · [PHP natif](#-php-natif) · [Gestion des erreurs](#-gestion-des-erreurs) · [Référence API](#-référence-api)
+
+</div>
+
+---
+
+## ✅ Prérequis
+
+| Dépendance | Version minimale |
+|---|---|
+| PHP | `^8.1` |
+| Guzzle HTTP | `^7.2` |
+| Laravel *(optionnel)* | `^9.0 \| ^10.0 \| ^11.0` |
+| Symfony *(optionnel)* | `^5.4 \| ^6.0 \| ^7.0` |
+
+---
+
+## 📦 Installation
 
 ```bash
 composer require mecxer713/gopay-php
 ```
 
-## Intégration Laravel
+---
 
-### 1. Configuration
-Publiez le fichier de configuration :
-```bash
-php artisan vendor:publish --provider="Mecxer713\GoPay\GoPayServiceProvider" --tag="config"
-```
-
-Ajoutez vos clés dans le fichier `.env` :
-```env
-GOPAY_BASE_URL="https://gopay.gooomart.com"
-GOPAY_API_KEY="votre_cle_api_standard"
-GOPAY_SECRET_KEY="votre_cle_secrete_standard"
-GOPAY_PAYOUT_API_KEY="votre_cle_api_payout"
-```
-
-### 2. Utilisation
-Vous pouvez utiliser la Facade `GoPay` ou l'injection de dépendances :
+## ⚡ Démarrage rapide
 
 ```php
-use Mecxer713\GoPay\Facades\GoPay;
+use Mecxer713\GoPay\GoPayService;
 
-// Paiement
-$response = GoPay::initPayment(500, 'CDF', '+24399000000', 'ref-1234');
-echo $response->status; // "success"
-echo $response->transId;
+$gopay = new GoPayService(
+    baseUrl:          'https://gopay.gooomart.com',
+    paymentApiKey:    'votre_api_key',
+    paymentSecretKey: 'votre_secret_key',
+    payoutApiKey:     'votre_payout_api_key',
+);
 
-// Payout
-$balanceResponse = GoPay::getPayoutBalance();
-echo $balanceResponse->balance;
+// Initier un paiement
+$response = $gopay->initPayment(4000, 'CDF', '+24399000000', 'REF-001');
+
+if ($response->isSuccessful()) {
+    echo $response->transId;           // TRANS-001.94786.53389
+    echo $response->transactionStatus; // "success"
+    echo $response->amount;            // "4000"
+    echo $response->currency;          // "CDF"
+}
 ```
 
 ---
 
-## Intégration Symfony
+## 🔷 Laravel
 
 ### 1. Configuration
-Activez le Bundle dans votre fichier `config/bundles.php` (si Flex ne l'a pas fait automatiquement) :
+
+Le package supporte **Laravel Package Auto-Discovery**. Aucune déclaration manuelle n'est nécessaire.
+
+Publiez le fichier de configuration :
+
+```bash
+php artisan vendor:publish --provider="Mecxer713\GoPay\GoPayServiceProvider" --tag="gopay-config"
+```
+
+Ajoutez vos clés dans le fichier `.env` :
+
+```env
+GOPAY_BASE_URL=https://gopay.gooomart.com
+GOPAY_API_KEY=votre_cle_api
+GOPAY_SECRET_KEY=votre_cle_secrete
+GOPAY_PAYOUT_API_KEY=votre_cle_api_payout
+```
+
+### 2. Via la Facade
+
+```php
+use Mecxer713\GoPay\Facades\GoPay;
+
+// Initier un paiement
+$response = GoPay::initPayment(4000, 'CDF', '+24399000000', 'REF-001');
+
+if ($response->isSuccessful()) {
+    $transId = $response->transId;
+}
+
+// Vérifier le statut d'un paiement
+$check = GoPay::checkPayment('REF-001');
+echo $check->transactionStatus; // "success", "pending", ...
+```
+
+### 3. Via l'injection de dépendances
+
+```php
+use Mecxer713\GoPay\GoPayServiceInterface;
+
+class PaymentController extends Controller
+{
+    public function __construct(private GoPayServiceInterface $gopay) {}
+
+    public function pay(): JsonResponse
+    {
+        $response = $this->gopay->initPayment(4000, 'CDF', '+24399000000', 'REF-001');
+
+        return response()->json([
+            'success' => $response->isSuccessful(),
+            'trans_id' => $response->transId,
+        ]);
+    }
+}
+```
+
+---
+
+## 🟣 Symfony
+
+### 1. Activer le Bundle
+
+Dans `config/bundles.php` (si Flex ne l'a pas fait automatiquement) :
+
 ```php
 return [
     // ...
@@ -55,147 +136,335 @@ return [
 ];
 ```
 
-Créez le fichier de configuration `config/packages/go_pay.yaml` :
+### 2. Créer la configuration
+
+`config/packages/go_pay.yaml` :
+
 ```yaml
 go_pay:
-    base_url: '%env(GOPAY_BASE_URL)%'
-    api_key: '%env(GOPAY_API_KEY)%'
-    secret_key: '%env(GOPAY_SECRET_KEY)%'
+    base_url:       '%env(GOPAY_BASE_URL)%'
+    api_key:        '%env(GOPAY_API_KEY)%'
+    secret_key:     '%env(GOPAY_SECRET_KEY)%'
     payout_api_key: '%env(GOPAY_PAYOUT_API_KEY)%'
 ```
 
-Ajoutez vos clés dans votre `.env` :
+`.env` :
+
 ```env
-GOPAY_BASE_URL="https://gopay.gooomart.com"
-GOPAY_API_KEY="votre_cle_api_standard"
-GOPAY_SECRET_KEY="votre_cle_secrete_standard"
-GOPAY_PAYOUT_API_KEY="votre_cle_api_payout"
+GOPAY_BASE_URL=https://gopay.gooomart.com
+GOPAY_API_KEY=votre_cle_api
+GOPAY_SECRET_KEY=votre_cle_secrete
+GOPAY_PAYOUT_API_KEY=votre_cle_api_payout
 ```
 
-### 2. Utilisation
-Utilisez l'injection de dépendances (`Mecxer713\GoPay\GoPayService`) dans vos contrôleurs ou services :
+### 3. Utilisation via l'injection de dépendances
 
 ```php
-namespace App\Controller;
-
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Mecxer713\GoPay\GoPayServiceInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class PaymentController extends AbstractController
 {
-    public function index(GoPayServiceInterface $goPayService)
-    {
-        // Paiement
-        $response = $goPayService->initPayment(500, 'CDF', '+24399000000', 'ref-1234');
-        $transId = $response->transId;
+    public function __construct(private GoPayServiceInterface $gopay) {}
 
-        // Payout
-        $balanceResponse = $goPayService->getPayoutBalance();
-        $balance = $balanceResponse->balance;
+    public function pay(): Response
+    {
+        $balance = $this->gopay->getPayoutBalance();
+
+        return $this->json(['balance' => $balance->balance]);
     }
 }
 ```
 
 ---
 
-## PHP Natif (Framework Agnostic)
-
-Vous pouvez également utiliser le SDK sans framework :
+## 🔧 PHP Natif
 
 ```php
 require 'vendor/autoload.php';
 
 use Mecxer713\GoPay\GoPayService;
 
-$goPay = new GoPayService(
-    'https://gopay.gooomart.com',
-    'api_key',
-    'secret_key',
-    'payout_api_key'
+$gopay = new GoPayService(
+    baseUrl:          'https://gopay.gooomart.com',
+    paymentApiKey:    'votre_api_key',
+    paymentSecretKey: 'votre_secret_key',
+    payoutApiKey:     'votre_payout_api_key',
 );
 
-$balance = $goPay->getPayoutBalance();
+$balance = $gopay->getPayoutBalance();
+echo $balance->balance; // 5000.0
 ```
 
 ---
 
-## Méthodes Disponibles
+## 📖 Référence API
 
-Voici la liste de toutes les méthodes que vous pouvez appeler depuis l'instance `GoPayService` (ou via la Facade `GoPay` sous Laravel) :
+### 💳 Payment API
 
-### 💳 Paiements (Payment API)
+#### `initPayment()` — Initier un paiement
 
-- **`initPayment(float $amount, string $devise, string $telephone, string $myref, ?string $usersId = null)`**
-  Initie une demande de paiement. Renvoie les instructions (ex: saisir le PIN) et les références.
-- **`checkPayment(string $ref)`**
-  Vérifie l'état d'une transaction de paiement en utilisant la référence retournée lors de l'initialisation.
+```php
+$response = $gopay->initPayment(
+    amount:    4000,
+    devise:    'CDF',
+    telephone: '+24399000000',
+    myref:     'REF-001',
+    usersId:   null // optionnel
+);
+```
 
-### 💸 Transferts d'Argent (Payout API)
-
-- **`getPayoutBalance()`**
-  Récupère le solde disponible dans votre Wallet (en différentes devises).
-- **`getPayoutTransfers()`**
-  Récupère la liste paginée de vos transferts d'argent (historique).
-- **`sendPayoutTransfer(float $montant, string $devise, array $telephones, array $myrefs, ?string $dateDenvoi = null)`**
-  Permet d'envoyer de l'argent à une ou plusieurs personnes (Mobile Money) en une seule requête.
-- **`getPayoutTransferStatus(string $transIdOrMyref)`**
-  Affiche le statut actuel d'un transfert d'argent spécifique (`EN ATTENTE`, `TRAITÉE`, `REJETÉE`).
-- **`deletePayoutTransfer(string $transId)`**
-  Permet d'annuler et de supprimer un transfert d'argent (seulement s'il est au statut `EN ATTENTE`).
+**Retourne** : [`PaymentResponse`](#paymentresponse)
 
 ---
 
-## Retours de l'API (DTOs)
+#### `checkPayment()` — Vérifier le statut
 
-Toutes les méthodes de paiement et de payout (à l'exception de `getPayoutTransfers`) retournent désormais des objets DTO fortement typés :
-- `Mecxer713\GoPay\DTO\PaymentResponse`
-- `Mecxer713\GoPay\DTO\PayoutBalanceResponse`
-- `Mecxer713\GoPay\DTO\PayoutTransferResponse`
+```php
+$response = $gopay->checkPayment(ref: 'REF-001');
+```
 
-Cela permet une meilleure autocomplétion et évite les erreurs d'accès aux tableaux.
-Par exemple, pour accéder au statut : `$response->status` au lieu de `$response['status']`.
+**Retourne** : [`PaymentResponse`](#paymentresponse)
 
 ---
 
-## Gestion des Erreurs
+### 💸 Payout API
 
-Le package intercepte automatiquement les erreurs retournées par l'API (qu'il s'agisse d'un code HTTP 4xx/5xx ou d'une réponse HTTP 200 contenant un code d'erreur) et lève une exception spécifique `Mecxer713\GoPay\Exception\GoPayApiException`.
+#### `getPayoutBalance()` — Solde du wallet
 
-Le message de l'exception est formaté de manière à inclure le code d'erreur officiel de GoPAY s'il est disponible (ex: `[ERR_APIKEY_MISSING] La clé API ...`).
+```php
+$response = $gopay->getPayoutBalance();
 
-Vous pouvez l'attraper pour récupérer le code de statut HTTP, le message détaillé ou le code d'erreur spécifique :
+echo $response->balance;  // 5000.0
+echo $response->currency; // "USD"
+```
+
+**Retourne** : [`PayoutBalanceResponse`](#payoutbalanceresponse)
+
+---
+
+#### `sendPayoutTransfer()` — Envoyer de l'argent
+
+```php
+$response = $gopay->sendPayoutTransfer(
+    montant:    500,
+    devise:     'CDF',
+    telephones: ['0991234567', '0811234567'],
+    myrefs:     ['ref-001', 'ref-002'],
+    dateDenvoi: null // optionnel : "2024/12/25 14:00"
+);
+```
+
+**Retourne** : [`PayoutTransferResponse`](#payouttransferresponse)
+
+---
+
+#### `getPayoutTransferStatus()` — Statut d'un transfert
+
+```php
+$response = $gopay->getPayoutTransferStatus(transIdOrMyref: 'TRANS-001.94786.53389');
+
+echo $response->transactionStatus; // "EN ATTENTE" | "TRAITÉE" | "REJETÉE"
+```
+
+**Retourne** : [`PayoutTransferResponse`](#payouttransferresponse)
+
+---
+
+#### `getPayoutTransfers()` — Liste des transferts
+
+```php
+$transfers = $gopay->getPayoutTransfers(); // array brut
+```
+
+---
+
+#### `deletePayoutTransfer()` — Supprimer un transfert
+
+> ⚠️ Seuls les transferts au statut `EN ATTENTE` peuvent être supprimés.
+
+```php
+$response = $gopay->deletePayoutTransfer(transId: 'TRANS-001.94786.53389');
+```
+
+**Retourne** : [`PayoutTransferResponse`](#payouttransferresponse)
+
+---
+
+## 🗂 Objets de Réponse (DTOs)
+
+Toutes les méthodes retournent des objets PHP fortement typés, avec autocomplétion IDE complète.
+
+### `PaymentResponse`
+
+| Propriété | Type | Description |
+|---|---|---|
+| `$success` | `bool` | `true` si la requête a réussi |
+| `$transactionStatus` | `?string` | Statut textuel de la transaction (ex: `"success"`) |
+| `$transId` | `?string` | Identifiant unique de la transaction |
+| `$url` | `?string` | URL de redirection (si applicable) |
+| `$state` | `?string` | État interne de la transaction |
+| `$message` | `?string` | Message humain retourné par l'API |
+| `$amount` | `?string` | Montant de la transaction |
+| `$currency` | `?string` | Devise (ex: `"CDF"`, `"USD"`) |
+| `$source` | `?string` | Source de la transaction (ex: `"API"`) |
+| `$date` | `?string` | Date ISO de la transaction |
+| `$raw` | `array` | Réponse JSON brute complète |
+
+**Méthode helper** : `isSuccessful(): bool`
+
+---
+
+### `PayoutBalanceResponse`
+
+| Propriété | Type | Description |
+|---|---|---|
+| `$success` | `bool` | `true` si la requête a réussi |
+| `$balance` | `float` | Solde du wallet |
+| `$currency` | `?string` | Devise du solde |
+| `$message` | `?string` | Message de l'API |
+| `$raw` | `array` | Réponse JSON brute complète |
+
+**Méthode helper** : `isSuccessful(): bool`
+
+---
+
+### `PayoutTransferResponse`
+
+| Propriété | Type | Description |
+|---|---|---|
+| `$success` | `bool` | `true` si la requête a réussi |
+| `$transactionStatus` | `?string` | Statut (`"EN ATTENTE"`, `"TRAITÉE"`, `"REJETÉE"`) |
+| `$transId` | `?string` | Identifiant unique du transfert |
+| `$state` | `?string` | État interne |
+| `$message` | `?string` | Message de l'API |
+| `$amount` | `?string` | Montant du transfert |
+| `$currency` | `?string` | Devise |
+| `$source` | `?string` | Source |
+| `$date` | `?string` | Date ISO du transfert |
+| `$raw` | `array` | Réponse JSON brute complète |
+
+**Méthode helper** : `isSuccessful(): bool`
+
+---
+
+## 🚨 Gestion des Erreurs
+
+Le SDK intercepte automatiquement les erreurs de l'API — qu'elles proviennent d'une réponse HTTP `4xx/5xx` ou d'une réponse `200` contenant `"success": false` — et lève une exception typée.
+
+### Hiérarchie des exceptions
+
+```
+\Exception
+└── GoPayException          — erreur réseau ou décodage JSON
+    ├── GoPayApiException   — erreur métier retournée par l'API
+    └── ConfigurationException — clés API manquantes
+```
+
+### Exemple complet
 
 ```php
 use Mecxer713\GoPay\Exception\GoPayApiException;
+use Mecxer713\GoPay\Exception\GoPayException;
+use Mecxer713\GoPay\Enums\GoPayErrorCode;
 
 try {
-    $response = GoPay::initPayment(500, 'CDF', '+24399000000', 'ref-1234');
-} catch (GoPayApiException $e) {
-    // Message formaté (ex: "[ERR_NO_PAYMENT_FOUND] Aucune transaction correspondante...")
-    echo $e->getMessage(); 
-    
-    // Code d'erreur HTTP (ex: 400 ou 200 si erreur logique)
-    echo $e->getCode(); 
-    
-    // Les données brutes retournées par l'API pour extraire le code d'erreur
-    $errorData = $e->getResponseData(); 
-    $errorCode = $errorData['error_code'] ?? null;
-    
-    if ($errorCode === 'ERR_APIKEY_MISSING') {
-        // Gérer l'erreur spécifique...
+    $response = GoPay::initPayment(4000, 'CDF', '+24399000000', 'REF-001');
+
+    if ($response->isSuccessful()) {
+        // Traitement du succès
+        $transId = $response->transId;
     }
+
+} catch (GoPayApiException $e) {
+    // Erreur retournée par l'API GoPAY
+    echo $e->getMessage();     // "[ERR_NO_PAYMENT_FOUND] Aucune transaction..."
+    echo $e->getCode();        // Code HTTP (ex: 400)
+    echo $e->getErrorCode();   // "ERR_NO_PAYMENT_FOUND"
+
+    // Comparaison typée via l'enum
+    if ($e->isErrorCode(GoPayErrorCode::TIMESTAMP_EXPIRED)) {
+        // Le timestamp est trop ancien, relancer la requête
+    }
+
+    if ($e->isErrorCode(GoPayErrorCode::APIKEY_INVALID)) {
+        // Clé API invalide
+    }
+
+    // Accès aux données brutes de la réponse
+    $raw = $e->getResponseData();
+
+} catch (GoPayException $e) {
+    // Erreur réseau, timeout, ou JSON invalide
+    echo $e->getMessage();
 }
+```
+
+### Codes d'erreur (`GoPayErrorCode`)
+
+| Enum | Valeur | Description |
+|---|---|---|
+| `APIKEY_MISSING` | `ERR_APIKEY_MISSING` | Header `x-api-key` absent |
+| `SIGNATURE_MISSING` | `ERR_SIGNATURE_MISSING` | Header `x-signature` absent |
+| `TIMESTAMP_MISSING` | `ERR_TIMESTAMP_MISSING` | Header `x-timestamp` absent |
+| `NONCE_MISSING` | `ERR_NONCE_MISSING` | Header `x-nonce` absent |
+| `APIKEY_INVALID` | `ERR_APIKEY_INVALID` | Clé API invalide |
+| `APIKEY_FORBIDDEN` | `ERR_APIKEY_FORBIDDEN` | Permissions insuffisantes |
+| `APIKEY_INACTIVE` | `ERR_APIKEY_INACTIVE` | Clé API désactivée |
+| `SIGNATURE_INVALID` | `ERR_SIGNATURE_INVALID` | Signature HMAC incorrecte |
+| `TIMESTAMP_EXPIRED` | `ERR_TIMESTAMP_EXPIRED` | Timestamp expiré (> 120 sec) |
+| `NONCE_REPLAY` | `ERR_NONCE_REPLAY` | Nonce déjà utilisé |
+| `VALIDATION` | `ERR_VALIDATION` | Paramètres invalides |
+| `NO_PAYMENT_FOUND` | `ERR_NO_PAYMENT_FOUND` | Transaction introuvable |
+
+---
+
+## 🧪 Tests
+
+```bash
+# Lancer les tests
+composer test
+
+# Analyse statique (PHPStan)
+composer analyse
+
+# Formatage du code (Laravel Pint)
+composer format
 ```
 
 ---
 
-## Tests
+## 📄 Changelog
 
-Le SDK utilise **Pest PHP** pour les tests automatisés.
-Pour exécuter la suite de tests :
+Consultez le fichier [CHANGELOG.md](CHANGELOG.md) pour l'historique des versions.
 
-```bash
-composer test
-# ou
-./vendor/bin/pest
-```
+| Version | Changements clés |
+|---|---|
+| `v1.2.0` | Refactoring complet : enums, DTOs enrichis, helpers, ServiceProvider amélioré |
+| `v1.1.x` | Gestion des erreurs API, support clés `success`/`transaction` |
+| `v1.0.x` | Version initiale |
+
+---
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Pour contribuer :
+
+1. Forkez le dépôt
+2. Créez une branche : `git checkout -b feature/ma-fonctionnalite`
+3. Committez vos changements avec des messages clairs
+4. Ouvrez une Pull Request
+
+Assurez-vous que les tests passent avant de soumettre : `composer test`.
+
+---
+
+## 📃 Licence
+
+Ce package est distribué sous la licence **MIT**. Consultez le fichier [LICENSE](LICENSE) pour plus de détails.
+
+---
+
+<div align="center">
+  Développé par <a href="https://github.com/Mecxer713">Mecxer713</a> · Propulsé par <a href="https://gopay.gooomart.com">GoPAY</a>
+</div>

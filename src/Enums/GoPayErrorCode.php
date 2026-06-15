@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Mecxer713\GoPay\Enums;
+
+enum GoPayErrorCode: string
+{
+    case APIKEY_MISSING      = 'ERR_APIKEY_MISSING';
+    case SIGNATURE_MISSING   = 'ERR_SIGNATURE_MISSING';
+    case TIMESTAMP_MISSING   = 'ERR_TIMESTAMP_MISSING';
+    case NONCE_MISSING       = 'ERR_NONCE_MISSING';
+    case APIKEY_INVALID      = 'ERR_APIKEY_INVALID';
+    case APIKEY_FORBIDDEN    = 'ERR_APIKEY_FORBIDDEN';
+    case APIKEY_INACTIVE     = 'ERR_APIKEY_INACTIVE';
+    case SIGNATURE_INVALID   = 'ERR_SIGNATURE_INVALID';
+    case TIMESTAMP_EXPIRED   = 'ERR_TIMESTAMP_EXPIRED';
+    case NONCE_REPLAY        = 'ERR_NONCE_REPLAY';
+    case VALIDATION          = 'ERR_VALIDATION';
+    case NO_PAYMENT_FOUND    = 'ERR_NO_PAYMENT_FOUND';
+}

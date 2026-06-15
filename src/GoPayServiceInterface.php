@@ -17,7 +17,7 @@ interface GoPayServiceInterface
     public function getPayoutBalance(): PayoutBalanceResponse;
 
     /**
-     * @return PayoutTransferResponse[]|array<string, mixed>
+     * @return array<string, mixed>
      */
     public function getPayoutTransfers(): array;
 

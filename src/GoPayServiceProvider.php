@@ -16,7 +16,7 @@ class GoPayServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/gopay.php' => config_path('gopay.php'),
-            ], 'config');
+            ], 'gopay-config');
         }
     }
 
@@ -28,16 +28,27 @@ class GoPayServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/gopay.php', 'gopay');
 
         $this->app->singleton(GoPayServiceInterface::class, function ($app) {
+            /** @var array<string, mixed> $config */
             $config = $app['config']->get('gopay');
 
             return new GoPayService(
-                $config['base_url'] ?? 'https://gopay.gooomart.com',
-                $config['api_key'] ?? '',
-                $config['secret_key'] ?? '',
-                $config['payout_api_key'] ?? ''
+                baseUrl:          $config['base_url']       ?? 'https://gopay.gooomart.com',
+                paymentApiKey:    $config['api_key']        ?? '',
+                paymentSecretKey: $config['secret_key']     ?? '',
+                payoutApiKey:     $config['payout_api_key'] ?? ''
             );
         });
 
         $this->app->alias(GoPayServiceInterface::class, 'gopay');
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array<int, string>
+     */
+    public function provides(): array
+    {
+        return [GoPayServiceInterface::class, 'gopay'];
     }
 }

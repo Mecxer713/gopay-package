@@ -159,9 +159,11 @@ Par exemple, pour accéder au statut : `$response->status` au lieu de `$response
 
 ## Gestion des Erreurs
 
-En cas d'erreur de la part de l'API GoPAY (HTTP 4xx ou 5xx), le package lève une exception spécifique `Mecxer713\GoPay\Exception\GoPayApiException`.
+Le package intercepte automatiquement les erreurs retournées par l'API (qu'il s'agisse d'un code HTTP 4xx/5xx ou d'une réponse HTTP 200 contenant un code d'erreur) et lève une exception spécifique `Mecxer713\GoPay\Exception\GoPayApiException`.
 
-Vous pouvez l'attraper pour récupérer le code de statut HTTP ou le message détaillé renvoyé par l'API :
+Le message de l'exception est formaté de manière à inclure le code d'erreur officiel de GoPAY s'il est disponible (ex: `[ERR_APIKEY_MISSING] La clé API ...`).
+
+Vous pouvez l'attraper pour récupérer le code de statut HTTP, le message détaillé ou le code d'erreur spécifique :
 
 ```php
 use Mecxer713\GoPay\Exception\GoPayApiException;
@@ -169,14 +171,19 @@ use Mecxer713\GoPay\Exception\GoPayApiException;
 try {
     $response = GoPay::initPayment(500, 'CDF', '+24399000000', 'ref-1234');
 } catch (GoPayApiException $e) {
-    // Message de l'API (ex: "Solde insuffisant")
+    // Message formaté (ex: "[ERR_NO_PAYMENT_FOUND] Aucune transaction correspondante...")
     echo $e->getMessage(); 
     
-    // Code d'erreur HTTP (ex: 400)
+    // Code d'erreur HTTP (ex: 400 ou 200 si erreur logique)
     echo $e->getCode(); 
     
-    // Les données brutes retournées par l'API
+    // Les données brutes retournées par l'API pour extraire le code d'erreur
     $errorData = $e->getResponseData(); 
+    $errorCode = $errorData['error_code'] ?? null;
+    
+    if ($errorCode === 'ERR_APIKEY_MISSING') {
+        // Gérer l'erreur spécifique...
+    }
 }
 ```
 

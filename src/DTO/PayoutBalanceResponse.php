@@ -18,10 +18,14 @@ class PayoutBalanceResponse
      */
     public static function fromArray(array $response): self
     {
+        if (!isset($response['status'])) {
+            throw new \InvalidArgumentException('Clé "status" manquante dans la réponse de l\'API.');
+        }
+
         $data = $response['data'] ?? [];
 
         return new self(
-            status: $response['status'] ?? 'unknown',
+            status: $response['status'],
             balance: (float) ($data['balance'] ?? 0.0),
             currency: $data['currency'] ?? null,
             message: $response['message'] ?? null

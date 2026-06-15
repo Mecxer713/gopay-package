@@ -23,10 +23,14 @@ class PaymentResponse
      */
     public static function fromArray(array $response): self
     {
+        if (!isset($response['status'])) {
+            throw new \InvalidArgumentException('Clé "status" manquante dans la réponse de l\'API.');
+        }
+
         $data = $response['data'] ?? [];
 
         return new self(
-            status: $response['status'] ?? 'unknown',
+            status: $response['status'],
             transId: $data['trans_id'] ?? null,
             url: $data['url'] ?? null,
             state: $data['state'] ?? null,

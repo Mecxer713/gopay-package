@@ -178,11 +178,11 @@ class GoPayService implements GoPayServiceInterface
         $timestamp = time();
 
         // Récupérer uniquement le path pour la signature
-        $path = parse_url($this->baseUrl.$endpoint, PHP_URL_PATH);
+        $path = parse_url($this->baseUrl . $endpoint, PHP_URL_PATH);
         $paramsString = empty($payload) ? '' : http_build_query($payload);
 
         // String à signer: endpoint . methode . params . nonce . timestamp
-        $message = $path.$method.$paramsString.$nonce.$timestamp;
+        $message = $path . $method . $paramsString . $nonce . $timestamp;
 
         $signature = hash_hmac('sha256', $message, $secretKey);
 
@@ -201,7 +201,7 @@ class GoPayService implements GoPayServiceInterface
 
         if ($method === 'POST') {
             $options['json'] = $payload;
-        } elseif (in_array($method, ['GET', 'DELETE']) && ! empty($payload)) {
+        } elseif (in_array($method, ['GET', 'DELETE']) && !empty($payload)) {
             $options['query'] = $payload;
         }
 
@@ -214,23 +214,29 @@ class GoPayService implements GoPayServiceInterface
             }
 
             return json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (ClientException $e) {
-            $response = $e->getResponse();
-            $content = $response->getBody()->getContents();
-            $message = $e->getMessage();
-            try {
-                $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-                if (isset($decoded['message'])) {
-                    $message = $decoded['message'];
-                }
-            } catch (\JsonException $je) {
-                // Ignore json exception and keep default message
-            }
-            throw new GoPayException('Erreur API GoPAY: '.$message, $e->getCode(), $e);
         } catch (GuzzleException $e) {
-            throw new GoPayException('Erreur de requête HTTP: '.$e->getMessage(), $e->getCode(), $e);
+            if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
+                try {
+                    $response = $e->getResponse();
+                    if ($response) {
+                        $body = $response->getBody()->getContents();
+                        $statusCode = $response->getStatusCode();
+                        $responseData = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+                        
+                        throw new \Mecxer713\GoPay\Exception\GoPayApiException(
+                            "Erreur API GoPAY: " . ($responseData['message'] ?? $e->getMessage()),
+                            $statusCode,
+                            is_array($responseData) ? $responseData : [],
+                            $e
+                        );
+                    }
+                } catch (\JsonException $jsonException) {
+                    // Si on n'arrive pas à parser l'erreur en JSON, on laisse passer pour lancer GoPayException
+                }
+            }
+            throw new GoPayException("Erreur de requête HTTP: " . $e->getMessage(), $e->getCode(), $e);
         } catch (\JsonException $e) {
-            throw new GoPayException('Erreur de décodage JSON de la réponse: '.$e->getMessage(), $e->getCode(), $e);
+            throw new GoPayException("Erreur de décodage JSON de la réponse: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
 }

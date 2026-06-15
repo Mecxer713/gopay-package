@@ -22,11 +22,15 @@ class PayoutTransferResponse
      */
     public static function fromArray(array $response): self
     {
+        if (!isset($response['status'])) {
+            throw new \InvalidArgumentException('Clé "status" manquante dans la réponse de l\'API.');
+        }
+
         $data = $response['data'] ?? [];
 
         // Sometimes the transfer ID might be nested differently, depending on the API
         return new self(
-            status: $response['status'] ?? 'unknown',
+            status: $response['status'],
             transId: $data['trans_id'] ?? null,
             state: $data['state'] ?? null,
             message: $response['message'] ?? null,

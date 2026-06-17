@@ -440,6 +440,7 @@ Consultez le fichier [CHANGELOG.md](CHANGELOG.md) pour l'historique des versions
 
 | Version | Changements clés |
 |---|---|
+| `v1.3.0` | Refactoring architectural : séparation en PaymentService, PayoutService et HTTP Client |
 | `v1.2.0` | Refactoring complet : enums, DTOs enrichis, helpers, ServiceProvider amélioré |
 | `v1.1.x` | Gestion des erreurs API, support clés `success`/`transaction` |
 | `v1.0.x` | Version initiale |

@@ -4,32 +4,38 @@ declare(strict_types=1);
 
 namespace Mecxer713\GoPay;
 
-use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\GuzzleException;
 use Mecxer713\GoPay\DTO\PaymentResponse;
 use Mecxer713\GoPay\DTO\PayoutBalanceResponse;
 use Mecxer713\GoPay\DTO\PayoutTransferResponse;
-use Mecxer713\GoPay\Exception\ConfigurationException;
-use Mecxer713\GoPay\Exception\GoPayApiException;
 use Mecxer713\GoPay\Exception\GoPayException;
+use Mecxer713\GoPay\Http\GoPayClient;
+use Mecxer713\GoPay\Services\PaymentService;
+use Mecxer713\GoPay\Services\PayoutService;
 
 class GoPayService implements GoPayServiceInterface
 {
-    protected ClientInterface $client;
+    protected GoPayClient $client;
+    protected PaymentService $paymentService;
+    protected PayoutService $payoutService;
 
     public function __construct(
         protected string $baseUrl = 'https://gopay.gooomart.com',
         protected string $paymentApiKey = '',
         protected string $paymentSecretKey = '',
         protected string $payoutApiKey = '',
-        ?ClientInterface $client = null
+        ?ClientInterface $guzzleClient = null
     ) {
-        $this->baseUrl = rtrim($this->baseUrl, '/');
-        $this->client = $client ?? new Client([
-            'base_uri' => $this->baseUrl,
-            'timeout'  => 30.0,
-        ]);
+        $this->client = new GoPayClient(
+            $this->baseUrl,
+            $this->paymentApiKey,
+            $this->paymentSecretKey,
+            $this->payoutApiKey,
+            $guzzleClient
+        );
+        
+        $this->paymentService = new PaymentService($this->client);
+        $this->payoutService = new PayoutService($this->client);
     }
 
     /**
@@ -45,20 +51,7 @@ class GoPayService implements GoPayServiceInterface
      */
     public function initPayment(float $amount, string $devise, string $telephone, string $myref, ?string $usersId = null): PaymentResponse
     {
-        $payload = [
-            'amount'    => $amount,
-            'devise'    => $devise,
-            'telephone' => $telephone,
-            'myref'     => $myref,
-        ];
-
-        if ($usersId !== null) {
-            $payload['users_id'] = $usersId;
-        }
-
-        return PaymentResponse::fromArray(
-            $this->sendRequest('POST', '/api/v3/payment/init', $payload, 'payment')
-        );
+        return $this->paymentService->initPayment($amount, $devise, $telephone, $myref, $usersId);
     }
 
     /**
@@ -70,9 +63,7 @@ class GoPayService implements GoPayServiceInterface
      */
     public function checkPayment(string $ref): PaymentResponse
     {
-        return PaymentResponse::fromArray(
-            $this->sendRequest('GET', '/api/v3/payment/check/'.$ref, [], 'payment')
-        );
+        return $this->paymentService->checkPayment($ref);
     }
 
     /**
@@ -82,9 +73,7 @@ class GoPayService implements GoPayServiceInterface
      */
     public function getPayoutBalance(): PayoutBalanceResponse
     {
-        return PayoutBalanceResponse::fromArray(
-            $this->sendRequest('GET', '/api/payout/v3/balance', [], 'payout')
-        );
+        return $this->payoutService->getPayoutBalance();
     }
 
     /**
@@ -96,7 +85,7 @@ class GoPayService implements GoPayServiceInterface
      */
     public function getPayoutTransfers(): array
     {
-        return $this->sendRequest('GET', '/api/payout/v3/transfer', [], 'payout');
+        return $this->payoutService->getPayoutTransfers();
     }
 
     /**
@@ -112,20 +101,7 @@ class GoPayService implements GoPayServiceInterface
      */
     public function sendPayoutTransfer(float $montant, string $devise, array $telephones, array $myrefs, ?string $dateDenvoi = null): PayoutTransferResponse
     {
-        $payload = [
-            'montant'   => $montant,
-            'devise'    => $devise,
-            'telephone' => $telephones,
-            'myref'     => $myrefs,
-        ];
-
-        if ($dateDenvoi !== null) {
-            $payload['date_denvoi'] = $dateDenvoi;
-        }
-
-        return PayoutTransferResponse::fromArray(
-            $this->sendRequest('POST', '/api/payout/v3/transfer', $payload, 'payout')
-        );
+        return $this->payoutService->sendPayoutTransfer($montant, $devise, $telephones, $myrefs, $dateDenvoi);
     }
 
     /**
@@ -137,9 +113,7 @@ class GoPayService implements GoPayServiceInterface
      */
     public function getPayoutTransferStatus(string $transIdOrMyref): PayoutTransferResponse
     {
-        return PayoutTransferResponse::fromArray(
-            $this->sendRequest('GET', '/api/payout/v3/transfer/'.$transIdOrMyref, [], 'payout')
-        );
+        return $this->payoutService->getPayoutTransferStatus($transIdOrMyref);
     }
 
     /**
@@ -151,158 +125,22 @@ class GoPayService implements GoPayServiceInterface
      */
     public function deletePayoutTransfer(string $transId): PayoutTransferResponse
     {
-        return PayoutTransferResponse::fromArray(
-            $this->sendRequest('DELETE', '/api/payout/v3/transfer/'.$transId, [], 'payout')
-        );
+        return $this->payoutService->deletePayoutTransfer($transId);
     }
-
-    // -------------------------------------------------------------------------
-    // Internal helpers
-    // -------------------------------------------------------------------------
-
+    
     /**
-     * Construit et envoie la requête HTTP à l'API GoPAY avec les en-têtes d'authentification.
-     *
-     * @param  string               $method   GET, POST ou DELETE
-     * @param  string               $endpoint Le chemin de l'API (ex: '/api/v3/payment/init')
-     * @param  array<string, mixed> $payload  Les paramètres de la requête
-     * @param  string               $type     Le type d'API ('payment' ou 'payout')
-     *
-     * @return array<string, mixed>
-     *
-     * @throws GoPayException|ConfigurationException
+     * Accès direct au service de paiement
      */
-    protected function sendRequest(string $method, string $endpoint, array $payload, string $type): array
+    public function payment(): PaymentService
     {
-        $apiKey    = $type === 'payment' ? $this->paymentApiKey : $this->payoutApiKey;
-        $secretKey = $this->paymentSecretKey;
-
-        if (empty($apiKey) || empty($secretKey)) {
-            throw new ConfigurationException("Les clés API pour {$type} ne sont pas configurées.");
-        }
-
-        $nonce     = bin2hex(random_bytes(16));
-        $timestamp = time();
-
-        $options = [
-            'headers' => $this->buildHeaders($apiKey, $endpoint, $method, $payload, $nonce, $timestamp, $secretKey),
-        ];
-
-        if ($method === 'POST') {
-            $options['json'] = $payload;
-        } elseif (in_array($method, ['GET', 'DELETE'], strict: true) && !empty($payload)) {
-            $options['query'] = $payload;
-        }
-
-        try {
-            $response = $this->client->request($method, $endpoint, $options);
-            $content  = $response->getBody()->getContents();
-
-            if (empty($content)) {
-                return [];
-            }
-
-            $responseData = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-
-            if (!is_array($responseData)) {
-                return [];
-            }
-
-            // Erreur logique retournée avec HTTP 200 (success: false ou présence d'un error_code)
-            if (isset($responseData['error_code']) || (isset($responseData['success']) && $responseData['success'] === false)) {
-                throw new GoPayApiException(
-                    $this->formatErrorMessage($responseData),
-                    $response->getStatusCode(),
-                    $responseData
-                );
-            }
-
-            return $responseData;
-
-        } catch (GuzzleException $e) {
-            if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
-                try {
-                    $response = $e->getResponse();
-                    if ($response) {
-                        $body         = $response->getBody()->getContents();
-                        $statusCode   = $response->getStatusCode();
-                        $responseData = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-
-                        return is_array($responseData) ? $responseData : [];
-                    }
-                } catch (\JsonException $jsonException) {
-                    // Si on n'arrive pas à parser l'erreur en JSON, on laisse passer pour lancer GoPayException
-                }
-            }
-
-            throw new GoPayException("Erreur de requête HTTP: " . $e->getMessage(), $e->getCode(), $e);
-
-        } catch (\JsonException $e) {
-            throw new GoPayException("Erreur de décodage JSON de la réponse: " . $e->getMessage(), $e->getCode(), $e);
-        }
+        return $this->paymentService;
     }
 
     /**
-     * Construit les headers HMAC pour une requête.
-     *
-     * @param  array<string, mixed> $payload
-     * @return array<string, string>
+     * Accès direct au service de reversement
      */
-    private function buildHeaders(
-        string $apiKey,
-        string $endpoint,
-        string $method,
-        array $payload,
-        string $nonce,
-        int $timestamp,
-        string $secretKey
-    ): array {
-        $signature = $this->buildSignature($endpoint, $method, $payload, $nonce, $timestamp, $secretKey);
-
-        return [
-            'Accept'        => 'application/json',
-            'Content-Type'  => 'application/json',
-            'x-api-key'     => $apiKey,
-            'x-signature'   => $signature,
-            'x-timestamp'   => (string) $timestamp,
-            'x-nonce'       => $nonce,
-        ];
-    }
-
-    /**
-     * Calcule la signature HMAC-SHA256 de la requête.
-     *
-     * Format du message : path + method + params + nonce + timestamp
-     *
-     * @param  array<string, mixed> $payload
-     */
-    private function buildSignature(
-        string $endpoint,
-        string $method,
-        array $payload,
-        string $nonce,
-        int $timestamp,
-        string $secretKey
-    ): string {
-        $path         = (string) parse_url($this->baseUrl.$endpoint, PHP_URL_PATH);
-        $paramsString = empty($payload) ? '' : http_build_query($payload);
-        $message      = $path.$method.$paramsString.$nonce.$timestamp;
-
-        return hash_hmac('sha256', $message, $secretKey);
-    }
-
-    /**
-     * Formate le message d'erreur à partir d'une réponse API.
-     *
-     * @param  array<string, mixed> $responseData
-     */
-    private function formatErrorMessage(array $responseData): string
+    public function payout(): PayoutService
     {
-        $message   = $responseData['message'] ?? "Erreur inattendue de l'API GoPAY.";
-        $errorCode = $responseData['error_code'] ?? null;
-
-        return $errorCode !== null
-            ? sprintf('[%s] %s', $errorCode, $message)
-            : $message;
+        return $this->payoutService;
     }
 }

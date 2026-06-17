@@ -221,31 +221,24 @@ class GoPayService implements GoPayServiceInterface
 
         } catch (GuzzleException $e) {
             if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
-                $httpResponse = $e->getResponse();
-                if ($httpResponse !== null) {
-                    try {
-                        $body         = $httpResponse->getBody()->getContents();
-                        $statusCode   = $httpResponse->getStatusCode();
+                try {
+                    $response = $e->getResponse();
+                    if ($response) {
+                        $body         = $response->getBody()->getContents();
+                        $statusCode   = $response->getStatusCode();
                         $responseData = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 
-                        if (is_array($responseData)) {
-                            throw new GoPayApiException(
-                                $this->formatErrorMessage($responseData),
-                                $statusCode,
-                                $responseData,
-                                $e
-                            );
-                        }
-                    } catch (\JsonException) {
-                        // Impossible de parser le body → on laisse lever GoPayException
+                        return is_array($responseData) ? $responseData : [];
                     }
+                } catch (\JsonException $jsonException) {
+                    // Si on n'arrive pas à parser l'erreur en JSON, on laisse passer pour lancer GoPayException
                 }
             }
 
-            throw new GoPayException('Erreur de requête HTTP: '.$e->getMessage(), $e->getCode(), $e);
+            throw new GoPayException("Erreur de requête HTTP: " . $e->getMessage(), $e->getCode(), $e);
 
         } catch (\JsonException $e) {
-            throw new GoPayException('Erreur de décodage JSON de la réponse: '.$e->getMessage(), $e->getCode(), $e);
+            throw new GoPayException("Erreur de décodage JSON de la réponse: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
 

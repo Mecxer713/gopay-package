@@ -117,14 +117,9 @@ class GoPayClient
      */
     private function buildSignature(string $endpoint, string $method, array $payload, string $nonce, int $timestamp, string $secretKey): string
     {
-        $path = (string) parse_url($this->baseUrl.$endpoint, PHP_URL_PATH);
-        
-        $paramsString = '';
-        if (!empty($payload)) {
-            $paramsString = $method === 'POST' ? json_encode($payload) : http_build_query($payload);
-        }
-
-        $message = $path.$method.$paramsString.$nonce.$timestamp;
+        $path         = (string) parse_url($this->baseUrl.$endpoint, PHP_URL_PATH);
+        $paramsString = empty($payload) ? '' : http_build_query($payload);
+        $message      = $path.$method.$paramsString.$nonce.$timestamp;
 
         return hash_hmac('sha256', $message, $secretKey);
     }

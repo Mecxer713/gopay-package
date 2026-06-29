@@ -7,8 +7,6 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Mecxer713\GoPay\DTO\PaymentResponse;
-use Mecxer713\GoPay\Exception\GoPayApiException;
-use Mecxer713\GoPay\Enums\GoPayErrorCode;
 use Mecxer713\GoPay\GoPayService;
 
 // Helper pour créer un GoPayService avec un mock HTTP
@@ -89,7 +87,7 @@ it('can check a payment status', function () {
         ->transId->toBe('T999');
 });
 
-it('throws GoPayApiException with error code on API error', function () {
+it('returns failed PaymentResponse with error code on API error', function () {
     $service = makePaymentService([
         new Response(200, [], (string) json_encode([
             'success'    => false,
@@ -98,10 +96,17 @@ it('throws GoPayApiException with error code on API error', function () {
         ])),
     ]);
 
-    $service->checkPayment('invalid-ref');
-})->throws(GoPayApiException::class, '[ERR_NO_PAYMENT_FOUND]');
+    $response = $service->checkPayment('invalid-ref');
 
-it('GoPayApiException provides error code helpers', function () {
+    expect($response)
+        ->toBeInstanceOf(PaymentResponse::class)
+        ->success->toBeFalse()
+        ->isSuccessful()->toBeFalse()
+        ->errorCode->toBe('ERR_NO_PAYMENT_FOUND')
+        ->message->toBe('Aucune transaction correspondante.');
+});
+
+it('handles error codes during payment initialization', function () {
     $service = makePaymentService([
         new Response(400, [], (string) json_encode([
             'success'    => false,
@@ -110,12 +115,11 @@ it('GoPayApiException provides error code helpers', function () {
         ])),
     ]);
 
-    try {
-        $service->initPayment(100, 'CDF', '0999', 'ref');
-    } catch (GoPayApiException $e) {
-        expect($e->getErrorCode())->toBe('ERR_APIKEY_INVALID');
-        expect($e->getErrorCodeEnum())->toBe(GoPayErrorCode::APIKEY_INVALID);
-        expect($e->isErrorCode(GoPayErrorCode::APIKEY_INVALID))->toBeTrue();
-        expect($e->isErrorCode(GoPayErrorCode::APIKEY_MISSING))->toBeFalse();
-    }
+    $response = $service->initPayment(100, 'CDF', '0999', 'ref');
+
+    expect($response)
+        ->toBeInstanceOf(PaymentResponse::class)
+        ->success->toBeFalse()
+        ->errorCode->toBe('ERR_APIKEY_INVALID')
+        ->message->toBe('La clé API est invalide.');
 });

@@ -22,6 +22,7 @@ class PaymentResponse
         public readonly ?string $currency = null,
         public readonly ?string $source = null,
         public readonly ?string $date = null,
+        public readonly ?string $errorCode = null,
         public readonly array $raw = []
     ) {}
 
@@ -56,6 +57,7 @@ class PaymentResponse
             currency: $tx['currency'] ?? null,
             source: $tx['source'] ?? null,
             date: $tx['date'] ?? null,
+            errorCode: $response['error_code'] ?? null,
             raw: $response
         );
     }

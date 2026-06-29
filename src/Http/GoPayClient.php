@@ -8,7 +8,6 @@ use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use Mecxer713\GoPay\Exception\ConfigurationException;
-use Mecxer713\GoPay\Exception\GoPayApiException;
 use Mecxer713\GoPay\Exception\GoPayException;
 
 class GoPayClient
@@ -72,14 +71,6 @@ class GoPayClient
                 return [];
             }
 
-            if (isset($responseData['error_code']) || (isset($responseData['success']) && $responseData['success'] === false)) {
-                throw new GoPayApiException(
-                    $this->formatErrorMessage($responseData),
-                    $response->getStatusCode(),
-                    $responseData
-                );
-            }
-
             return $responseData;
 
         } catch (GuzzleException $e) {
@@ -131,18 +122,5 @@ class GoPayClient
         $message      = $path.$method.$paramsString.$nonce.$timestamp;
 
         return hash_hmac('sha256', $message, $secretKey);
-    }
-
-    /**
-     * @param array<string, mixed> $responseData
-     */
-    private function formatErrorMessage(array $responseData): string
-    {
-        $message   = $responseData['message'] ?? "Erreur inattendue de l'API GoPAY.";
-        $errorCode = $responseData['error_code'] ?? null;
-
-        return $errorCode !== null
-            ? sprintf('[%s] %s', $errorCode, $message)
-            : $message;
     }
 }

@@ -21,7 +21,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
       - uses: gradle/actions/setup-gradle@v4
       - name: Validate mobile SDK version consistency
         run: python scripts/check_mobile_sdk_versions.py --sdk android

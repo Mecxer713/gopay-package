@@ -5,3 +5,12 @@
 .vscode/
 phpunit.xml
 *.log
+/.gradle/
+android-sdk/.gradle/
+android-sdk/build/
+android-sdk/**/build/
+android-sdk/local.properties
+flutter-sdk/.dart_tool/
+flutter-sdk/build/
+flutter-sdk/.packages
+flutter-sdk/pubspec.lock

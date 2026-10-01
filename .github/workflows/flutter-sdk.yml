@@ -1,0 +1,40 @@
+name: Flutter SDK
+
+on:
+  pull_request:
+    paths:
+      - "flutter-sdk/**"
+      - ".github/workflows/flutter-sdk.yml"
+  push:
+    tags: ["flutter-v*"]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Validate mobile SDK version consistency
+        run: python scripts/check_mobile_sdk_versions.py --sdk flutter
+      - name: Check release tag and pubspec version
+        if: startsWith(github.ref, 'refs/tags/flutter-v')
+        shell: bash
+        run: |
+          tag_version="${GITHUB_REF_NAME#flutter-v}"
+          package_version="$(sed -n 's/^version: *//p' flutter-sdk/pubspec.yaml)"
+          [[ "${tag_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          test "${tag_version}" = "${package_version}"
+      - name: Resolve dependencies
+        working-directory: flutter-sdk
+        run: flutter pub get
+      - name: Analyze
+        working-directory: flutter-sdk
+        run: flutter analyze
+      - name: Test
+        working-directory: flutter-sdk
+        run: flutter test
+      - name: Validate package archive
+        working-directory: flutter-sdk
+        run: dart pub publish --dry-run

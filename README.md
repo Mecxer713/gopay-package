@@ -35,6 +35,12 @@ Intégrez l'API GoPAY en quelques minutes dans vos projets **PHP natif**, **Lara
 composer require mecxer713/gopay-php
 ```
 
+## SDK mobiles
+
+Les SDK mobiles sont des paquets autonomes, installables séparément des sources PHP après leur publication : [Android/Kotlin](android-sdk/README.md) via Gradle et JitPack, [Flutter/Dart](flutter-sdk/README.md) via pub.dev (`flutter pub add gopay`). Chacun contient sa propre implémentation HTTP et HMAC GoPAY. Comme ils signent les requêtes depuis l'application, les secrets intégrés au binaire peuvent être extraits ; un backend reste préférable pour une utilisation en production.
+
+Leurs versions et procédures de sortie sont indépendantes. Voir [VERSIONING.md](VERSIONING.md) pour la politique SemVer et les tags `android-vX.Y.Z` et `flutter-vX.Y.Z`.
+
 ---
 
 ## ⚡ Démarrage rapide

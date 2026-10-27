@@ -14,6 +14,16 @@ android {
     compileSdk = 35
 
     defaultConfig { minSdk = 23 }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     publishing {
         singleVariant("release") { withSourcesJar() }
     }
@@ -21,6 +31,7 @@ android {
 
 dependencies {
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
 }
 
 afterEvaluate {
@@ -28,13 +39,13 @@ afterEvaluate {
         publications {
             register<MavenPublication>("release") {
                 from(components["release"])
-                groupId = "com.github.Mecxer713.gopay-package"
-                artifactId = "gopay"
+                groupId = "com.github.Mecxer713"
+                artifactId = "gopay-android"
                 version = gopaySdkVersion
                 pom {
                     name.set("GoPAY Android SDK")
-                    description.set("Standalone Kotlin Android client for the GoPAY payment and payout API.")
-                    url.set("https://github.com/Mecxer713/gopay-package")
+                    description.set("Standalone Kotlin Android client library for the GoPAY payment and payout API.")
+                    url.set("https://github.com/Mecxer713/gopay-android")
                     licenses {
                         license {
                             name.set("The MIT License")
@@ -42,9 +53,9 @@ afterEvaluate {
                         }
                     }
                     scm {
-                        connection.set("scm:git:git://github.com/Mecxer713/gopay-package.git")
-                        developerConnection.set("scm:git:ssh://github.com/Mecxer713/gopay-package.git")
-                        url.set("https://github.com/Mecxer713/gopay-package/tree/main/android-sdk")
+                        connection.set("scm:git:git://github.com/Mecxer713/gopay-android.git")
+                        developerConnection.set("scm:git:ssh://github.com/Mecxer713/gopay-android.git")
+                        url.set("https://github.com/Mecxer713/gopay-android")
                     }
                 }
             }

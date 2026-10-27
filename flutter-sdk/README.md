@@ -1,36 +1,104 @@
-# GoPAY Flutter SDK
+# GoPAY Flutter & Dart SDK 💙
 
-Dart client package for Flutter mobile apps. After the first release is published on pub.dev, install it with:
+[![pub package](https://img.shields.io/pub/v/gopay.svg)](https://pub.dev/packages/gopay)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+SDK officiel Dart & Flutter pour l'intégration de la passerelle **GoPAY Mobile Money** (Paiements et Payouts).
+
+Multiplateforme : Android, iOS, Web, Windows, macOS, Linux.
+
+---
+
+## 📦 Installation
+
+### Option 1 : Via pub.dev (Recommandé)
 
 ```bash
 flutter pub add gopay
 ```
+Ou ajoutez dans votre `pubspec.yaml` :
+```yaml
+dependencies:
+  gopay: ^0.1.0
+```
 
-For local development before the package is published, add the package path to the app's `pubspec.yaml`:
+### Option 2 : Via Git directement
 
 ```yaml
 dependencies:
   gopay:
-    path: ../gopay-package/flutter-sdk
+    git:
+      url: https://github.com/Mecxer713/gopay-flutter.git
+      ref: v0.1.0
 ```
 
-The package includes its own Dart implementation and does not depend on Composer, PHP, or the PHP SDK sources.
+---
+
+## ⚡ Démarrage Rapide
+
+### 1. Initialiser le client
 
 ```dart
-final gopay = GoPayClient(const GoPayConfig(
-  paymentApiKey: 'your_api_key',
-  paymentSecretKey: 'your_secret_key',
-  payoutApiKey: 'your_payout_api_key',
-));
+import 'package:gopay/gopay.dart';
 
-final response = await gopay.initPayment(4000, 'CDF', '+24399000000', 'ORDER-001');
-if (response.success) print(response.transId);
+final gopay = GoPayClient(const GoPayConfig(
+  baseUrl: 'https://gopay.gooomart.com', // Optionnel
+  paymentApiKey: 'VOTRE_PAYMENT_API_KEY',
+  paymentSecretKey: 'VOTRE_PAYMENT_SECRET_KEY',
+  payoutApiKey: 'VOTRE_PAYOUT_API_KEY', // Optionnel si aucun transfert sortant
+));
 ```
 
-The client also exposes `checkPayment`, `getPayoutBalance`, `getPayoutTransfers`, `sendPayoutTransfer`, `getPayoutTransferStatus` and `deletePayoutTransfer`. Network calls are asynchronous. The `GoPayTransport` interface can be implemented by applications and tests.
+### 2. Initier une demande de paiement (Mobile Money)
 
-## Security
+```dart
+final payment = await gopay.initPayment(
+  4000.0,
+  'CDF',          // "CDF" ou "USD"
+  '+243825000000',
+  'CMD-1001',
+);
 
-This direct-client design requires the API keys and signing secret in the application. Values embedded in an APK can be recovered, including after obfuscation. Do not treat this as secure storage. A backend that holds the secret and signs requests is the safer production architecture, especially for payout operations.
+if (payment.success) {
+  print('Transaction initiée: ${payment.transId}');
+} else {
+  print('Échec: ${payment.message} (${payment.errorCode})');
+}
+```
 
-Run `flutter pub get` and `flutter test` from this directory.
+### 3. Vérifier le statut d'un paiement
+
+```dart
+final check = await gopay.checkPayment('CMD-1001');
+print('Statut: ${check.transactionStatus}'); // "success", "pending", etc.
+```
+
+### 4. Payout (Transferts de masse)
+
+```dart
+// Consulter le solde Payout
+final balance = await gopay.getPayoutBalance();
+if (balance.success) {
+  print('Solde: ${balance.balance} ${balance.currency}');
+}
+
+// Envoyer un transfert
+final transfer = await gopay.sendPayoutTransfer(
+  1500.0,
+  'CDF',
+  ['+243825000000'],
+  ['PO-001'],
+);
+```
+
+---
+
+## 🧪 Exemple Exécutable
+
+Un exemple complet est disponible dans [`example/main.dart`](example/main.dart).
+
+---
+
+## 📄 Licence
+
+Ce package est distribué sous licence [MIT](LICENSE).

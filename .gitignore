@@ -1,16 +1,35 @@
-/vendor/
-/node_modules/
-.env
+# OS & Editors
+.DS_Store
+Thumbs.db
 .idea/
 .vscode/
-phpunit.xml
+*.iml
 *.log
-/.gradle/
+
+# PHP & Composer
+php-sdk/vendor/
+php-sdk/.env
+php-sdk/.env.*
+!php-sdk/.env.example
+php-sdk/.phpunit.result.cache
+php-sdk/.pest/
+
+# Android & Gradle
 android-sdk/.gradle/
+android-sdk/**/.gradle/
 android-sdk/build/
 android-sdk/**/build/
+android-sdk/.kotlin/
+android-sdk/**/.kotlin/
 android-sdk/local.properties
+android-sdk/**/local.properties
+
+# Flutter & Dart
 flutter-sdk/.dart_tool/
 flutter-sdk/build/
 flutter-sdk/.packages
 flutter-sdk/pubspec.lock
+
+# JavaScript & Node
+javascript-sdk/node_modules/
+javascript-sdk/dist/

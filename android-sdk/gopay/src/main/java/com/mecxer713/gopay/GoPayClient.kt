@@ -152,7 +152,7 @@ class GoPayClient @JvmOverloads constructor(
     companion object { private fun randomNonce(): String = ByteArray(16).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) } }
 }
 
-private fun JSONObject.optNullableString(key: String): String? = if (!has(key) || isNull(key)) null else opt(key).toString()
+private fun JSONObject.optNullableString(key: String): String? = if (!has(key) || isNull(key)) null else opt(key)?.toString()
 
 private class UrlConnectionTransport(baseUrl: String, private val timeoutMillis: Int) : GoPayTransport {
     private val baseUrl = baseUrl.trimEnd('/')

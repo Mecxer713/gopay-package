@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">GoPAY Tester</string>
+    <string name="tab_payments">Paiement</string>
+    <string name="tab_payouts">Payout</string>
+    <string name="tab_diagnostics">Diagnostic SDK</string>
+    
+    <string name="config_title">Configuration GoPAY</string>
+    <string name="base_url">URL de Base</string>
+    <string name="payment_api_key">Clé API Paiement (paymentApiKey)</string>
+    <string name="payment_secret_key">Secret Key (paymentSecretKey)</string>
+    <string name="payout_api_key">Clé API Payout (payoutApiKey)</string>
+    
+    <string name="init_payment">Initier Paiement</string>
+    <string name="check_payment">Vérifier Paiement</string>
+    <string name="amount">Montant</string>
+    <string name="currency">Devise</string>
+    <string name="phone">Téléphone (+243...)</string>
+    <string name="reference">Référence (myref)</string>
+    <string name="user_id">Identifiant Utilisateur (optionnel)</string>
+    <string name="trans_id_or_ref">Trans ID ou Référence</string>
+
+    <string name="payout_balance">Consulter Solde Payout</string>
+    <string name="payout_transfers">Liste des Transferts</string>
+    <string name="send_transfer">Envoyer Transfert Payout</string>
+    <string name="check_transfer_status">Statut Transfert</string>
+    <string name="delete_transfer">Supprimer Transfert</string>
+    <string name="phones_csv">Numéros (ex: +243990000000)</string>
+    <string name="refs_csv">Références (ex: REF-001)</string>
+    
+    <string name="run_sdk_tests">Exécuter les Tests SDK</string>
+    <string name="console_title">Résultats &amp; Logs</string>
+    <string name="clear_logs">Effacer</string>
+    <string name="copy_json">Copier JSON</string>
+    <string name="mock_mode">Mode Simulation (Sans appel réseau réel)</string>
+</resources>

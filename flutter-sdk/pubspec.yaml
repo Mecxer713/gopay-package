@@ -1,12 +1,15 @@
 name: gopay
-description: GoPAY payments and payouts client for Flutter applications.
+description: GoPAY payments and payouts client for Flutter and Dart applications.
 version: 0.1.0
 homepage: https://gopay.gooomart.com
-repository: https://github.com/Mecxer713/gopay-package/tree/main/flutter-sdk
-issue_tracker: https://github.com/Mecxer713/gopay-package/issues
+repository: https://github.com/Mecxer713/gopay-flutter
+issue_tracker: https://github.com/Mecxer713/gopay-flutter/issues
+
 environment:
   sdk: '>=3.2.0 <4.0.0'
+
 dependencies:
   crypto: ^3.0.6
+
 dev_dependencies:
   test: ^1.25.8

@@ -1,10 +1,19 @@
-# GoPAY Android SDK
+# GoPAY Android SDK 🤖
 
-Kotlin Android library for GoPAY payments and payouts. The module is `:gopay` and requires Android API 23 or newer. The host app supplies the merchant's own keys when it creates a client; the SDK does not contain fixed GoPAY credentials or a settings screen.
+[![JitPack](https://jitpack.io/v/Mecxer713/gopay-android.svg)](https://jitpack.io/#Mecxer713/gopay-android)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![API](https://img.shields.io/badge/API-23%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=23)
 
-## Install from Gradle
+Bibliothèque Android native (Kotlin) officielle pour l'intégration de l'API **GoPAY Mobile Money** (Paiements et Payouts). 
 
-After a GitHub release tag is built by JitPack, add JitPack to the consuming app's `settings.gradle.kts`:
+Le SDK est 100% autonome, léger, sans dépendances superflues, et ne nécessite que vos clés API marchandes.
+
+---
+
+## 📦 Installation avec Gradle (JitPack)
+
+### 1. Déclarer le dépôt JitPack
+Dans votre `settings.gradle.kts` (ou `build.gradle` racine) :
 
 ```kotlin
 dependencyResolutionManagement {
@@ -16,35 +25,112 @@ dependencyResolutionManagement {
 }
 ```
 
-Then add the standalone Android artifact to the app module's `build.gradle.kts` (replace the tag with a published release):
+### 2. Ajouter la dépendance
+Dans le fichier `build.gradle.kts` de votre module application (ex: `app/build.gradle.kts`) :
 
 ```kotlin
 dependencies {
-    implementation("com.github.Mecxer713.gopay-package:gopay:android-v0.1.0")
+    implementation("com.github.Mecxer713:gopay-android:0.1.0")
 }
 ```
 
-The artifact contains the Kotlin client and has no dependency on Composer, PHP, or the PHP SDK sources. For local development, open `android-sdk/` as a standalone Gradle build.
+---
+
+## ⚡ Démarrage Rapide
+
+### 1. Initialisation du client
+
+Instanciez `GoPayClient` en fournissant vos identifiants GoPAY :
 
 ```kotlin
-// Read these values from the app's settings form or account configuration.
-val gopay = GoPayClient(GoPayConfig(
-    paymentApiKey = apiKeyInput.trim(),
-    paymentSecretKey = secretKeyInput,
-    payoutApiKey = payoutApiKeyInput.trim(), // use "" when the app does not use payouts
-))
+import com.mecxer713.gopay.GoPayClient
+import com.mecxer713.gopay.GoPayConfig
 
-val result = withContext(Dispatchers.IO) {
-    gopay.initPayment(4000.0, "CDF", "+24399000000", "ORDER-001")
+val gopay = GoPayClient(
+    GoPayConfig(
+        baseUrl = "https://gopay.gooomart.com", // Optionnel, URL par défaut
+        paymentApiKey = "VOTRE_PAYMENT_API_KEY",
+        paymentSecretKey = "VOTRE_PAYMENT_SECRET_KEY",
+        payoutApiKey = "VOTRE_PAYOUT_API_KEY" // Optionnel si aucun transfert sortant
+    )
+)
+```
+
+### 2. Initier une demande de paiement (Mobile Money)
+
+Les requêtes réseau étant bloquantes, exécutez-les sur un dispatcher d'I/O (Coroutines) ou en tâche d'arrière-plan :
+
+```kotlin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+val payment = withContext(Dispatchers.IO) {
+    gopay.initPayment(
+        amount = 4000.0,
+        currency = "CDF",       // "CDF" ou "USD"
+        phone = "+243825000000",
+        reference = "CMD-1001"   // Référence unique de votre commande
+    )
+}
+
+if (payment.success) {
+    println("Paiement initié ! TransId: ${payment.transId}")
+} else {
+    println("Échec: ${payment.message} (${payment.errorCode})")
 }
 ```
 
-All client methods perform synchronous network I/O; call them on a background dispatcher/thread. Use `checkPayment`, `getPayoutBalance`, `getPayoutTransfers`, `sendPayoutTransfer`, `getPayoutTransferStatus` and `deletePayoutTransfer` for the other GoPAY operations. `GoPayResponse.raw` retains the complete decoded API object.
+### 3. Vérifier le statut d'un paiement
 
-Create a new `GoPayClient` after the user saves or changes their keys. The client uses the values supplied to its `GoPayConfig`; it does not load build-time constants. The payout API key is optional until a payout operation is called. The app may store settings between launches, but storage and the screen for entering keys belong to the host app.
+```kotlin
+val check = withContext(Dispatchers.IO) {
+    gopay.checkPayment(reference = "CMD-1001")
+}
 
-## Security
+println("Statut de la transaction: ${check.transactionStatus}") // ex: "success", "pending"
+```
 
-This direct-client design requires the API keys and signing secret in the application. Values embedded in an APK can be recovered, including after obfuscation. Do not treat this as secure storage. A backend that holds the secret and signs requests is the safer production architecture, especially for payout operations.
+### 4. Payout (Transferts de masse)
 
-Run the release unit tests and check the Maven artifact locally from the repository root with `bash ./gradlew :gopay:testReleaseUnitTest :gopay:publishReleasePublicationToMavenLocal`. On Windows, use `.\gradlew.bat` with the same tasks. The wrapper pins Gradle for repeatable builds.
+```kotlin
+// Consulter le solde Payout
+val balance = withContext(Dispatchers.IO) {
+    gopay.getPayoutBalance()
+}
+println("Solde: ${balance.balance} ${balance.currency}")
+
+// Émettre un transfert
+val transfer = withContext(Dispatchers.IO) {
+    gopay.sendPayoutTransfer(
+        amount = 1500.0,
+        currency = "CDF",
+        phones = listOf("+243825000000"),
+        references = listOf("PO-001")
+    )
+}
+```
+
+---
+
+## 📱 Application Démo (`:sample`)
+
+Ce dépôt inclut une application Android complète de test et de démonstration dans le module `:sample`.
+
+Pour tester localement :
+```bash
+./gradlew :sample:installDebug
+```
+
+---
+
+## 🧪 Tests Unitaires
+
+```bash
+./gradlew :gopay:testReleaseUnitTest
+```
+
+---
+
+## 📄 Licence
+
+Ce SDK est distribué sous licence [MIT](LICENSE).

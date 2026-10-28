@@ -1,4 +1,4 @@
 jdk:
   - openjdk17
 install:
-  - bash ./gradlew --no-daemon :gopay:build :gopay:publishReleasePublicationToMavenLocal
+  - bash ./gradlew --no-daemon :gopay:assembleRelease :gopay:publishToMavenLocal

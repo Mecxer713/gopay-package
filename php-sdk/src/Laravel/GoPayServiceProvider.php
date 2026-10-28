@@ -34,10 +34,10 @@ class GoPayServiceProvider extends ServiceProvider
             $config = $app['config']->get('gopay');
 
             return new GoPayService(
-                baseUrl:          $config['base_url']       ?? 'https://gopay.gooomart.com',
-                paymentApiKey:    $config['api_key']        ?? '',
-                paymentSecretKey: $config['secret_key']     ?? '',
-                payoutApiKey:     $config['payout_api_key'] ?? ''
+                baseUrl: $config['base_url'] ?? 'https://gopay.gooomart.com',
+                paymentApiKey: $config['api_key'] ?? '',
+                paymentSecretKey: $config['secret_key'] ?? '',
+                payoutApiKey: $config['payout_api_key'] ?? ''
             );
         });
 

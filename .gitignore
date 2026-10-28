@@ -23,6 +23,7 @@ android-sdk/.kotlin/
 android-sdk/**/.kotlin/
 android-sdk/local.properties
 android-sdk/**/local.properties
+android-sdk/dist/
 
 # Flutter & Dart
 flutter-sdk/.dart_tool/

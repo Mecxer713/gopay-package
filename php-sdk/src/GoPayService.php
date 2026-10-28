@@ -16,7 +16,9 @@ use Mecxer713\GoPay\Services\PayoutService;
 class GoPayService implements GoPayServiceInterface
 {
     protected GoPayClient $client;
+
     protected PaymentService $paymentService;
+
     protected PayoutService $payoutService;
 
     public function __construct(
@@ -33,7 +35,7 @@ class GoPayService implements GoPayServiceInterface
             $this->payoutApiKey,
             $guzzleClient
         );
-        
+
         $this->paymentService = new PaymentService($this->client);
         $this->payoutService = new PayoutService($this->client);
     }
@@ -41,11 +43,11 @@ class GoPayService implements GoPayServiceInterface
     /**
      * Initie une demande de paiement (Payment Init).
      *
-     * @param  float       $amount    Le montant du paiement
-     * @param  string      $devise    La devise (ex: USD, CDF)
-     * @param  string      $telephone Le numéro de téléphone du client
-     * @param  string      $myref     La référence interne de la transaction
-     * @param  string|null $usersId   Optionnel. ID de l'utilisateur pour lier la transaction.
+     * @param  float  $amount  Le montant du paiement
+     * @param  string  $devise  La devise (ex: USD, CDF)
+     * @param  string  $telephone  Le numéro de téléphone du client
+     * @param  string  $myref  La référence interne de la transaction
+     * @param  string|null  $usersId  Optionnel. ID de l'utilisateur pour lier la transaction.
      *
      * @throws GoPayException
      */
@@ -57,7 +59,7 @@ class GoPayService implements GoPayServiceInterface
     /**
      * Vérifie l'état de la transaction de paiement.
      *
-     * @param  string $ref La référence de la transaction
+     * @param  string  $ref  La référence de la transaction
      *
      * @throws GoPayException
      */
@@ -91,11 +93,11 @@ class GoPayService implements GoPayServiceInterface
     /**
      * Permet d'envoyer l'argent à une liste de comptes mobile money.
      *
-     * @param  float       $montant     Le montant (minimum 500 CDF ou 0.5 USD)
-     * @param  string      $devise      La devise (CDF|USD)
-     * @param  array       $telephones  Tableau de numéros (ex. ['0991234567','0811234567'])
-     * @param  array       $myrefs      Tableau de références de transaction
-     * @param  string|null $dateDenvoi  Optionnel, planifie l'envoi à une date précise (Y/m/d H:i)
+     * @param  float  $montant  Le montant (minimum 500 CDF ou 0.5 USD)
+     * @param  string  $devise  La devise (CDF|USD)
+     * @param  array  $telephones  Tableau de numéros (ex. ['0991234567','0811234567'])
+     * @param  array  $myrefs  Tableau de références de transaction
+     * @param  string|null  $dateDenvoi  Optionnel, planifie l'envoi à une date précise (Y/m/d H:i)
      *
      * @throws GoPayException
      */
@@ -107,7 +109,7 @@ class GoPayService implements GoPayServiceInterface
     /**
      * Affiche le statut d'un transfert d'argent (Payout).
      *
-     * @param  string $transIdOrMyref L'identifiant de la transaction (TRANS_ID ou myref)
+     * @param  string  $transIdOrMyref  L'identifiant de la transaction (TRANS_ID ou myref)
      *
      * @throws GoPayException
      */
@@ -119,7 +121,7 @@ class GoPayService implements GoPayServiceInterface
     /**
      * Supprime une transaction (Seules les transactions 'EN ATTENTE' peuvent être supprimées).
      *
-     * @param  string $transId L'identifiant de la transaction
+     * @param  string  $transId  L'identifiant de la transaction
      *
      * @throws GoPayException
      */
@@ -127,7 +129,7 @@ class GoPayService implements GoPayServiceInterface
     {
         return $this->payoutService->deletePayoutTransfer($transId);
     }
-    
+
     /**
      * Accès direct au service de paiement
      */

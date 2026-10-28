@@ -57,9 +57,15 @@ class GoPayClient @JvmOverloads constructor(
     }
 
     @Throws(GoPayException::class)
-    fun initPayment(amount: Double, devise: String, telephone: String, myref: String, usersId: String? = null): GoPayResponse {
-        val payload = linkedMapOf<String, Any>("amount" to amount, "devise" to devise, "telephone" to telephone, "myref" to myref)
-        usersId?.let { payload["users_id"] = it }
+    fun initPayment(
+        amount: Double,
+        currency: String,
+        phone: String,
+        reference: String,
+        userId: String? = null
+    ): GoPayResponse {
+        val payload = linkedMapOf<String, Any>("amount" to amount, "devise" to currency, "telephone" to phone, "myref" to reference)
+        userId?.let { payload["users_id"] = it }
         return request("POST", "/api/v3/payment/init", payload, false)
     }
 
@@ -67,9 +73,15 @@ class GoPayClient @JvmOverloads constructor(
     fun getPayoutBalance() = request("GET", "/api/payout/v3/balance", emptyMap(), true)
     fun getPayoutTransfers(): Any = requestAny("GET", "/api/payout/v3/transfer", emptyMap(), true)
 
-    fun sendPayoutTransfer(montant: Double, devise: String, telephones: List<String>, myrefs: List<String>, dateDenvoi: String? = null): GoPayResponse {
-        val payload = linkedMapOf<String, Any>("montant" to montant, "devise" to devise, "telephone" to telephones, "myref" to myrefs)
-        dateDenvoi?.let { payload["date_denvoi"] = it }
+    fun sendPayoutTransfer(
+        amount: Double,
+        currency: String,
+        phones: List<String>,
+        references: List<String>,
+        scheduledDate: String? = null
+    ): GoPayResponse {
+        val payload = linkedMapOf<String, Any>("montant" to amount, "devise" to currency, "telephone" to phones, "myref" to references)
+        scheduledDate?.let { payload["date_denvoi"] = it }
         return request("POST", "/api/payout/v3/transfer", payload, true)
     }
 

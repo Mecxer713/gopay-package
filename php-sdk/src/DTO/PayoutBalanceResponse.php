@@ -31,7 +31,7 @@ class PayoutBalanceResponse
      */
     public static function fromArray(array $response): self
     {
-        if (!isset($response['success']) && !isset($response['status'])) {
+        if (! isset($response['success']) && ! isset($response['status'])) {
             throw new \InvalidArgumentException('Clé "success" ou "status" manquante dans la réponse de l\'API.');
         }
 

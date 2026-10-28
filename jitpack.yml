@@ -1,0 +1,6 @@
+jdk:
+  - openjdk17
+before_install:
+  - chmod +x android-sdk/gradlew
+install:
+  - cd android-sdk && ./gradlew --no-daemon :gopay:assembleRelease :gopay:publishToMavenLocal

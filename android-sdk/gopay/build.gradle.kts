@@ -13,7 +13,10 @@ android {
     namespace = "com.mecxer713.gopay"
     compileSdk = 35
 
-    defaultConfig { minSdk = 23 }
+    defaultConfig {
+        minSdk = 23
+        consumerProguardFiles("consumer-rules.pro")
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -37,7 +40,45 @@ dependencies {
 afterEvaluate {
     publishing {
         publications {
+            // Main monorepo publication for JitPack: com.github.Mecxer713.gopay-package:gopay-android:<version>
             register<MavenPublication>("release") {
+                from(components["release"])
+                groupId = "com.github.Mecxer713.gopay-package"
+                artifactId = "gopay-android"
+                version = gopaySdkVersion
+                pom {
+                    name.set("GoPAY Android SDK")
+                    description.set("Standalone Kotlin Android client library for the GoPAY payment and payout API.")
+                    url.set("https://github.com/Mecxer713/gopay-package")
+                    licenses {
+                        license {
+                            name.set("The MIT License")
+                            url.set("https://opensource.org/licenses/MIT")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:git://github.com/Mecxer713/gopay-package.git")
+                        developerConnection.set("scm:git:ssh://github.com/Mecxer713/gopay-package.git")
+                        url.set("https://github.com/Mecxer713/gopay-package")
+                    }
+                }
+            }
+
+            // Submodule alias for JitPack: com.github.Mecxer713.gopay-package:gopay:<version>
+            register<MavenPublication>("releaseGopay") {
+                from(components["release"])
+                groupId = "com.github.Mecxer713.gopay-package"
+                artifactId = "gopay"
+                version = gopaySdkVersion
+                pom {
+                    name.set("GoPAY Android SDK")
+                    description.set("Standalone Kotlin Android client library for the GoPAY payment and payout API.")
+                    url.set("https://github.com/Mecxer713/gopay-package")
+                }
+            }
+
+            // Standalone publication alias: com.github.Mecxer713:gopay-android:<version>
+            register<MavenPublication>("releaseStandalone") {
                 from(components["release"])
                 groupId = "com.github.Mecxer713"
                 artifactId = "gopay-android"
@@ -46,19 +87,20 @@ afterEvaluate {
                     name.set("GoPAY Android SDK")
                     description.set("Standalone Kotlin Android client library for the GoPAY payment and payout API.")
                     url.set("https://github.com/Mecxer713/gopay-android")
-                    licenses {
-                        license {
-                            name.set("The MIT License")
-                            url.set("https://opensource.org/licenses/MIT")
-                        }
-                    }
-                    scm {
-                        connection.set("scm:git:git://github.com/Mecxer713/gopay-android.git")
-                        developerConnection.set("scm:git:ssh://github.com/Mecxer713/gopay-android.git")
-                        url.set("https://github.com/Mecxer713/gopay-android")
-                    }
                 }
             }
         }
     }
 }
+
+val exportAarTask = tasks.register<Copy>("exportAar") {
+    dependsOn("bundleReleaseAar", "sourceReleaseJar")
+    from(layout.buildDirectory.file("outputs/aar/gopay-release.aar")) {
+        rename { "gopay-android-$gopaySdkVersion.aar" }
+    }
+    from(layout.buildDirectory.file("intermediates/source_jar/release/release-sources.jar")) {
+        rename { "gopay-android-$gopaySdkVersion-sources.jar" }
+    }
+    into(rootProject.layout.projectDirectory.dir("dist"))
+}
+

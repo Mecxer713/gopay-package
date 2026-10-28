@@ -13,7 +13,7 @@ use Mecxer713\GoPay\GoPayService;
 // Helper pour créer un GoPayService payout avec un mock HTTP
 function makePayoutService(array $responses): GoPayService
 {
-    $mock   = new MockHandler($responses);
+    $mock = new MockHandler($responses);
     $client = new Client(['handler' => HandlerStack::create($mock)]);
 
     return new GoPayService(
@@ -29,7 +29,7 @@ it('can get payout balance', function () {
     $service = makePayoutService([
         new Response(200, [], (string) json_encode([
             'success' => true,
-            'data'    => ['balance' => 5000, 'currency' => 'USD'],
+            'data' => ['balance' => 5000, 'currency' => 'USD'],
         ])),
     ]);
 
@@ -46,12 +46,12 @@ it('can get payout balance', function () {
 it('can send a payout transfer', function () {
     $service = makePayoutService([
         new Response(200, [], (string) json_encode([
-            'success'     => true,
-            'message'     => 'Transfert initié.',
+            'success' => true,
+            'message' => 'Transfert initié.',
             'transaction' => [
-                'status'   => 'EN ATTENTE',
+                'status' => 'EN ATTENTE',
                 'trans_id' => 'PO123',
-                'amount'   => '5',
+                'amount' => '5',
                 'currency' => 'USD',
             ],
         ])),
@@ -71,9 +71,9 @@ it('can send a payout transfer', function () {
 it('can get payout transfer status', function () {
     $service = makePayoutService([
         new Response(200, [], (string) json_encode([
-            'success'     => true,
+            'success' => true,
             'transaction' => [
-                'status'   => 'TRAITÉE',
+                'status' => 'TRAITÉE',
                 'trans_id' => 'PO456',
             ],
         ])),

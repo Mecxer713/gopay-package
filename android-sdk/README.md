@@ -10,13 +10,19 @@ Le SDK est 100% autonome, léger, sans dépendances superflues, et ne nécessite
 
 ---
 
-## 📦 Installation avec Gradle (JitPack)
+## 📦 Installation dans un Projet Android Tiers
 
-### 1. Déclarer le dépôt JitPack
-Dans votre `settings.gradle.kts` (ou `build.gradle` racine) :
+Le SDK GoPAY Android est une bibliothèque Android native (`.aar`) 100% autonome (aucune dépendance tierce requise). Vous pouvez l'installer soit automatiquement via **JitPack**, soit manuellement via le **fichier binaire AAR**.
 
+### Méthode 1 : Via JitPack (Recommandé)
+
+#### 1.1 Déclarer le dépôt JitPack
+Ajoutez JitPack à votre gestionnaire de dépôts dans `settings.gradle.kts` (ou `settings.gradle`) :
+
+**Kotlin DSL (`settings.gradle.kts`) :**
 ```kotlin
 dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
@@ -25,14 +31,78 @@ dependencyResolutionManagement {
 }
 ```
 
-### 2. Ajouter la dépendance
-Dans le fichier `build.gradle.kts` de votre module application (ex: `app/build.gradle.kts`) :
-
-```kotlin
-dependencies {
-    implementation("com.github.Mecxer713:gopay-android:0.1.0")
+**Groovy DSL (`settings.gradle`) :**
+```groovy
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
 }
 ```
+
+#### 1.2 Ajouter la dépendance GoPAY
+Dans le fichier `build.gradle.kts` (ou `build.gradle`) de votre module application (ex: `app/build.gradle.kts`) :
+
+**Kotlin DSL (`app/build.gradle.kts`) :**
+```kotlin
+dependencies {
+    implementation("com.github.Mecxer713.gopay-package:gopay-android:0.1.0")
+}
+```
+
+**Groovy DSL (`app/build.gradle`) :**
+```groovy
+dependencies {
+    implementation 'com.github.Mecxer713.gopay-package:gopay-android:0.1.0'
+}
+```
+
+---
+
+### Méthode 2 : Via le Fichier Binaire AAR (Installation Locale / Hors-Ligne)
+
+Si vous préférez intégrer le SDK sans dépendre d'un gestionnaire de paquets distant :
+
+1. Téléchargez la dernière version de `gopay-android-0.1.0.aar` depuis les [GitHub Releases](https://github.com/Mecxer713/gopay-package/releases).
+2. Déposez le fichier `.aar` dans le sous-dossier `libs/` de votre module application (ex: `app/libs/gopay-android-0.1.0.aar`).
+3. Dans votre `app/build.gradle.kts` (ou `app/build.gradle`) :
+
+**Kotlin DSL (`app/build.gradle.kts`) :**
+```kotlin
+dependencies {
+    implementation(files("libs/gopay-android-0.1.0.aar"))
+}
+```
+
+**Groovy DSL (`app/build.gradle`) :**
+```groovy
+dependencies {
+    implementation files('libs/gopay-android-0.1.0.aar')
+}
+```
+
+---
+
+### 🌐 Permissions Android
+
+L'API GoPAY nécessite l'accès au réseau. Assurez-vous d'avoir déclaré la permission Internet dans votre `AndroidManifest.xml` :
+
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    ...
+</manifest>
+```
+
+---
+
+### 🛡️ Obfuscation & ProGuard / R8
+
+Le fichier `.aar` intègre automatiquement ses propres règles `consumer-rules.pro`. Si vous activez `isMinifyEnabled = true` dans votre application, les classes du SDK GoPAY (`GoPayClient`, `GoPayConfig`, `GoPayResponse`, etc.) sont automatiquement préservées sans configuration supplémentaire requise.
+
 
 ---
 

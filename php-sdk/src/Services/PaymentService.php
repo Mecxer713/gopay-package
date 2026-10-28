@@ -15,21 +15,21 @@ class PaymentService
     /**
      * Initie une demande de paiement (Payment Init).
      *
-     * @param  float       $amount    Le montant du paiement
-     * @param  string      $devise    La devise (ex: USD, CDF)
-     * @param  string      $telephone Le numéro de téléphone du client
-     * @param  string      $myref     La référence interne de la transaction
-     * @param  string|null $usersId   Optionnel. ID de l'utilisateur pour lier la transaction.
+     * @param  float  $amount  Le montant du paiement
+     * @param  string  $devise  La devise (ex: USD, CDF)
+     * @param  string  $telephone  Le numéro de téléphone du client
+     * @param  string  $myref  La référence interne de la transaction
+     * @param  string|null  $usersId  Optionnel. ID de l'utilisateur pour lier la transaction.
      *
      * @throws GoPayException
      */
     public function initPayment(float $amount, string $devise, string $telephone, string $myref, ?string $usersId = null): PaymentResponse
     {
         $payload = [
-            'amount'    => $amount,
-            'devise'    => $devise,
+            'amount' => $amount,
+            'devise' => $devise,
             'telephone' => $telephone,
-            'myref'     => $myref,
+            'myref' => $myref,
         ];
 
         if ($usersId !== null) {
@@ -44,7 +44,7 @@ class PaymentService
     /**
      * Vérifie l'état de la transaction de paiement.
      *
-     * @param  string $ref La référence de la transaction
+     * @param  string  $ref  La référence de la transaction
      *
      * @throws GoPayException
      */

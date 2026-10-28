@@ -12,8 +12,8 @@ use Mecxer713\GoPay\GoPayService;
 // Helper pour créer un GoPayService avec un mock HTTP
 function makePaymentService(array $responses): GoPayService
 {
-    $mock    = new MockHandler($responses);
-    $client  = new Client(['handler' => HandlerStack::create($mock)]);
+    $mock = new MockHandler($responses);
+    $client = new Client(['handler' => HandlerStack::create($mock)]);
 
     return new GoPayService(
         'https://gopay.gooomart.com',
@@ -27,15 +27,15 @@ function makePaymentService(array $responses): GoPayService
 it('can initialize a payment (success key)', function () {
     $service = makePaymentService([
         new Response(200, [], (string) json_encode([
-            'success'     => true,
-            'message'     => 'Votre transaction est effectuée avec succès.',
+            'success' => true,
+            'message' => 'Votre transaction est effectuée avec succès.',
             'transaction' => [
-                'status'   => 'success',
-                'amount'   => '4000',
+                'status' => 'success',
+                'amount' => '4000',
                 'currency' => 'CDF',
                 'trans_id' => 'TRANS-001.94786.53389',
-                'source'   => 'API',
-                'date'     => '2023-08-06T17:18:17.755517Z',
+                'source' => 'API',
+                'date' => '2023-08-06T17:18:17.755517Z',
             ],
         ])),
     ]);
@@ -57,8 +57,8 @@ it('can initialize a payment (success key)', function () {
 it('can initialize a payment (legacy status key)', function () {
     $service = makePaymentService([
         new Response(200, [], (string) json_encode([
-            'status'  => 'success',
-            'data'    => ['trans_id' => '12345', 'url' => 'http://example.com'],
+            'status' => 'success',
+            'data' => ['trans_id' => '12345', 'url' => 'http://example.com'],
         ])),
     ]);
 
@@ -73,7 +73,7 @@ it('can initialize a payment (legacy status key)', function () {
 it('can check a payment status', function () {
     $service = makePaymentService([
         new Response(200, [], (string) json_encode([
-            'success'     => true,
+            'success' => true,
             'transaction' => ['status' => 'COMPLETED', 'trans_id' => 'T999'],
         ])),
     ]);
@@ -90,9 +90,9 @@ it('can check a payment status', function () {
 it('returns failed PaymentResponse with error code on API error', function () {
     $service = makePaymentService([
         new Response(200, [], (string) json_encode([
-            'success'    => false,
+            'success' => false,
             'error_code' => 'ERR_NO_PAYMENT_FOUND',
-            'message'    => 'Aucune transaction correspondante.',
+            'message' => 'Aucune transaction correspondante.',
         ])),
     ]);
 
@@ -109,9 +109,9 @@ it('returns failed PaymentResponse with error code on API error', function () {
 it('handles error codes during payment initialization', function () {
     $service = makePaymentService([
         new Response(400, [], (string) json_encode([
-            'success'    => false,
+            'success' => false,
             'error_code' => 'ERR_APIKEY_INVALID',
-            'message'    => 'La clé API est invalide.',
+            'message' => 'La clé API est invalide.',
         ])),
     ]);
 

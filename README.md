@@ -18,8 +18,7 @@ Ce dépôt rassemble les SDKs officiels et autonomes pour intégrer facilement l
 Chaque SDK est rangé dans son propre sous-dossier, entièrement autonome avec ses tests, exemples et configurations de publication :
 
 | Package | Dossier | Plateformes & Frameworks | Gestionnaire de Paquets | Statut |
-|---|---|---|---|---|
-| 🤖 **Android SDK** | [`android-sdk/`](android-sdk/) | Kotlin, Android (API 23+) | **JitPack** (`com.github.Mecxer713:gopay-android:0.1.0`) | ✅ Prêt |
+| 🤖 **Android SDK** | [`android-sdk/`](android-sdk/) | Kotlin, Android (API 23+) | **JitPack** / **AAR** (`com.github.Mecxer713.gopay-package:gopay-android:0.1.0`) | ✅ Prêt |
 | 💙 **Flutter SDK** | [`flutter-sdk/`](flutter-sdk/) | Flutter & Dart (Cross-Platform) | **pub.dev** (`flutter pub add gopay`) & Git | ✅ Prêt |
 | 🟡 **JavaScript SDK** | [`javascript-sdk/`](javascript-sdk/) | Node.js, TypeScript, Next.js, Web | **npm** (`npm install gopay-js`) | ✅ Prêt |
 | 🐘 **PHP SDK** | [`php-sdk/`](php-sdk/) | PHP 8.1+, Laravel, Symfony, Natif | **Packagist** (`composer require mecxer713/gopay-php`) | ✅ Prêt |
@@ -34,7 +33,7 @@ Dossier : [`android-sdk/`](android-sdk/)
 ```kotlin
 // 1. Dépendance dans app/build.gradle.kts
 dependencies {
-    implementation("com.github.Mecxer713:gopay-android:0.1.0")
+    implementation("com.github.Mecxer713.gopay-package:gopay-android:0.1.0")
 }
 
 // 2. Initialisation avec vos clés marchandes

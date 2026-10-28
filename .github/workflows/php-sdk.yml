@@ -1,0 +1,40 @@
+name: PHP SDK
+
+on:
+  pull_request:
+    paths:
+      - "php-sdk/**"
+      - ".github/workflows/php-sdk.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "php-sdk/**"
+      - ".github/workflows/php-sdk.yml"
+    tags: ["php-v*"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, json, curl, openssl
+          coverage: none
+      - name: Install Composer dependencies
+        working-directory: php-sdk
+        run: composer install --prefer-dist --no-interaction
+      - name: Pint Format Check
+        working-directory: php-sdk
+        run: composer format:test
+      - name: PHPStan Analysis
+        working-directory: php-sdk
+        run: composer analyse
+      - name: Run Tests (Pest)
+        working-directory: php-sdk
+        run: composer test

@@ -201,3 +201,4 @@ Chaque SDK possède son propre préfixe de tag indépendant. Voici les commandes
 | **PHP** | `git tag php-v1.6.0 && git push origin php-v1.6.0` | Packagist : Indexation de la version Composer |
 | **Android** | `git tag android-v0.2.0 && git push origin android-v0.2.0` | CI GitHub : Release GitHub (AAR) + disponibilité JitPack |
 | **Flutter** | `dart pub publish` puis `git tag flutter-v0.2.0 && git push origin flutter-v0.2.0` | Publication sur pub.dev + tag d'archive Git |
+

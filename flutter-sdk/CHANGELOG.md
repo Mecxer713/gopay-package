@@ -1,3 +1,7 @@
+## 0.2.2
+
+- Optimized pubspec description length to fit pana's recommended 60-180 character range for a perfect 160/160 pub points score.
+
 ## 0.2.1
 
 - Enhanced dartdoc API documentation across all public classes, methods, and fields.

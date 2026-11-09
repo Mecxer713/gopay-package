@@ -28,7 +28,7 @@ jobs:
           coverage: none
       - name: Install Composer dependencies
         working-directory: php-sdk
-        run: composer install --prefer-dist --no-interaction
+        run: composer update --prefer-dist --no-interaction --no-progress
       - name: Pint Format Check
         working-directory: php-sdk
         run: composer format:test

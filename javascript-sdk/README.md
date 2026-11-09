@@ -1,6 +1,6 @@
 # GoPAY JavaScript & TypeScript SDK 🟡
 
-[![npm version](https://img.shields.io/npm/v/gopay-js.svg)](https://www.npmjs.com/package/gopay-js)
+[![npm version](https://img.shields.io/npm/v/@mecxer713/gopay.svg)](https://www.npmjs.com/package/@mecxer713/gopay)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green.svg)](https://nodejs.org/)
 
@@ -14,13 +14,13 @@ SDK officiel JavaScript et TypeScript universel (Node.js, Express, NestJS, Next.
 
 ```bash
 # Avec npm
-npm install gopay-js
+npm install @mecxer713/gopay
 
 # Avec yarn
-yarn add gopay-js
+yarn add @mecxer713/gopay
 
 # Avec pnpm
-pnpm add gopay-js
+pnpm add @mecxer713/gopay
 ```
 
 ---
@@ -30,7 +30,7 @@ pnpm add gopay-js
 ### 1. Initialiser le client GoPAY
 
 ```typescript
-import { GoPayClient } from 'gopay-js';
+import { GoPayClient } from '@mecxer713/gopay';
 
 const gopay = new GoPayClient({
   baseUrl: 'https://gopay.gooomart.com', // Optionnel, URL par défaut

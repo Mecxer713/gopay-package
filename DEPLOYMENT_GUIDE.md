@@ -13,7 +13,7 @@ Ce document détaille la procédure étape par étape pour publier et déployer 
 
 ---
 
-## 🟡 1. JavaScript / TypeScript SDK → **npm** (`gopay-js`)
+## 🟡 1. JavaScript / TypeScript SDK → **npm** (`@mecxer713/gopay`)
 
 La publication peut être soit **100% automatisée via GitHub Actions**, soit exécutée **manuellement depuis votre terminal**.
 
@@ -22,7 +22,7 @@ La publication peut être soit **100% automatisée via GitHub Actions**, soit ex
 1. **Générer un token npm :**
    - Connectez-vous sur [npmjs.com](https://www.npmjs.com/).
    - Cliquez sur votre avatar > **Access Tokens**.
-   - Cliquez sur **Generate New Token** > Choisissez **Automation** (ou un *Granular Access Token* avec permission *Read and Write* sur le package `gopay-js`).
+   - Cliquez sur **Generate New Token** > Choisissez **Automation** (ou un *Granular Access Token* avec permission *Read and Write* et *Bypass 2FA*).
 2. **Configurer le secret GitHub :**
    - Sur votre dépôt GitHub, allez dans **Settings** > **Secrets and variables** > **Actions**.
    - Cliquez sur **New repository secret**.
@@ -42,12 +42,19 @@ La publication peut être soit **100% automatisée via GitHub Actions**, soit ex
 ```bash
 cd javascript-sdk
 
-# 1. Vérifier les types et lancer les tests
+# 1. Se connecter avec votre compte npm
+npm login
+
+# 2. Vérifier les types et lancer les tests
 npm test
 npm run test:package
 
-# 2. Vérifier les fichiers embarqués dans le package
+# 3. Vérifier les fichiers embarqués dans le package
 npm pack --dry-run
+
+# 4. Publier
+npm publish --access public
+```
 
 # 3. Connexion à votre compte npm
 npm login

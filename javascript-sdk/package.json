@@ -1,6 +1,6 @@
 {
   "name": "gopay-js",
-  "version": "0.2.0",
+  "version": "1.6.0",
   "description": "Official JavaScript and TypeScript client for GoPAY Mobile Money payment and payout gateway.",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",

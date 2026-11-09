@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.0] - 2026-11-09
+## [1.6.0] - 2026-11-09
 ### Fixed
 - **Published package was unusable**: `main`/`types` pointed to `dist/index.js` while the compiler emitted `dist/src/index.js`.
 - `checkPayment()` now calls `GET /api/v3/payment/check/{ref}` (encoded path segment), aligned with the PHP, Kotlin and Dart SDKs (previously sent `?ref=`).

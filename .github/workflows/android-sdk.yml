@@ -33,7 +33,7 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#android-v}"
           [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
-          grep -Fq "## ${version}" android-sdk/CHANGELOG.md
+          grep -Eq "^## \[?${version//./\\.}\]?" android-sdk/CHANGELOG.md
       - name: Test and export publishable artifacts
         working-directory: android-sdk
         run: bash ./gradlew --no-daemon :gopay:testReleaseUnitTest :gopay:exportAar :gopay:publishToMavenLocal

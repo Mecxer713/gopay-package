@@ -28,6 +28,7 @@ jobs:
           package_version="$(sed -n 's/^version: *//p' flutter-sdk/pubspec.yaml)"
           [[ "${tag_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
           test "${tag_version}" = "${package_version}"
+          grep -Eq "^## \[?${tag_version//./\\.}\]?" flutter-sdk/CHANGELOG.md
       - name: Resolve dependencies
         working-directory: flutter-sdk
         run: flutter pub get

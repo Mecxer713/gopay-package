@@ -38,3 +38,24 @@ jobs:
       - name: Run Tests (Pest)
         working-directory: php-sdk
         run: composer test
+
+  release:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/php-v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate release tag against changelog
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#php-v}"
+          [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          grep -Eq "^## \[?${version//./\\.}\]?" php-sdk/CHANGELOG.md
+      - name: Notify Packagist (if token configured)
+        if: env.PACKAGIST_TOKEN != ''
+        env:
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+        run: |
+          curl -s -f -XPOST -H 'content-type:application/json' \
+            "https://packagist.org/api/update-package?username=Mecxer713&apiToken=${PACKAGIST_TOKEN}" \
+            -d '{"repository":{"url":"https://github.com/Mecxer713/gopay-php"}}' || true

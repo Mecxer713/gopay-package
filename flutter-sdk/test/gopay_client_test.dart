@@ -60,7 +60,7 @@ void main() {
   });
 
   test('transport failure becomes GoPayException', () async {
-    final client = GoPayClient(config(), transport: _FailingTransport());
+    final client = GoPayClient(config(), transport: _FailingTransport(), sleep: (_) async {});
     await expectLater(client.checkPayment('ref'), throwsA(isA<GoPayException>()));
   });
 
@@ -82,6 +82,57 @@ void main() {
     ]);
     expect(transfers.single['trans_id'], 'T1');
   });
+
+  test('payoutApiKey is optional for payment-only (mobile) integrations', () async {
+    const paymentOnly = GoPayConfig(paymentApiKey: 'pay-key', paymentSecretKey: 'secret');
+    final client = GoPayClient(paymentOnly, transport: FakeTransport(const GoPayHttpResponse(200, '{"success":true}')));
+    expect((await client.checkPayment('ref')).success, isTrue);
+    expect(() => client.getPayoutBalance(), throwsA(isA<GoPayConfigurationException>()));
+  });
+
+  test('GET requests are retried on transient failures with a fresh nonce', () async {
+    final transport = _ScriptedTransport([
+      const SocketException('reset'),
+      const GoPayHttpResponse(503, 'busy'),
+      const GoPayHttpResponse(200, '{"success":true}'),
+    ]);
+    final delays = <Duration>[];
+    var n = 0;
+    final client = GoPayClient(config(), transport: transport, nonceProvider: () => 'n${n++}', sleep: (d) async => delays.add(d));
+    final response = await client.checkPayment('ref');
+    expect(response.success, isTrue);
+    expect(transport.requests.length, 3);
+    expect(transport.requests.map((r) => r.headers['x-nonce']).toSet().length, 3);
+    expect(delays.length, 2);
+  });
+
+  test('POST requests are never retried (prevents double debit)', () async {
+    final transport = _ScriptedTransport([const SocketException('timeout')]);
+    final client = GoPayClient(config(), transport: transport, sleep: (_) async {});
+    await expectLater(client.initPayment(10, 'USD', '+2431', 'r'), throwsA(isA<GoPayException>()));
+    expect(transport.requests.length, 1);
+  });
+
+  test('retries stop after maxRetries', () async {
+    const cfg = GoPayConfig(paymentApiKey: 'k', paymentSecretKey: 's', maxRetries: 1);
+    final transport = _ScriptedTransport([const GoPayHttpResponse(502, 'bad gateway')]);
+    final client = GoPayClient(cfg, transport: transport, sleep: (_) async {});
+    await expectLater(client.checkPayment('ref'), throwsA(isA<GoPayException>()));
+    expect(transport.requests.length, 2);
+  });
+}
+
+class _ScriptedTransport implements GoPayTransport {
+  _ScriptedTransport(this.script);
+  final List<Object> script;
+  final requests = <GoPayHttpRequest>[];
+  @override
+  Future<GoPayHttpResponse> send(GoPayHttpRequest request) async {
+    requests.add(request);
+    final next = script[(requests.length - 1).clamp(0, script.length - 1)];
+    if (next is GoPayHttpResponse) return next;
+    throw next;
+  }
 }
 
 class _SequenceTransport implements GoPayTransport {

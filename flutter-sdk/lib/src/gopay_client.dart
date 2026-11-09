@@ -7,17 +7,27 @@ import 'gopay_models.dart';
 import 'gopay_transport.dart';
 
 class GoPayClient {
-  GoPayClient(this.config, {GoPayTransport? transport, int Function()? clockSeconds, String Function()? nonceProvider})
-      : _transport = transport ?? IoGoPayTransport(config.timeout),
+  GoPayClient(
+    this.config, {
+    GoPayTransport? transport,
+    int Function()? clockSeconds,
+    String Function()? nonceProvider,
+    Future<void> Function(Duration)? sleep,
+  })  : _transport = transport ?? HttpGoPayTransport(config.timeout),
         _clockSeconds = clockSeconds ?? (() => DateTime.now().millisecondsSinceEpoch ~/ 1000),
-        _nonceProvider = nonceProvider ?? _randomNonce {
+        _nonceProvider = nonceProvider ?? _randomNonce,
+        _sleep = sleep ?? Future<void>.delayed {
     if (!config.baseUrl.startsWith('https://')) throw ArgumentError('GoPAY baseUrl must use HTTPS.');
   }
+
+  static const _retryableStatus = {408, 429, 500, 502, 503, 504};
+  static final _jitter = Random();
 
   final GoPayConfig config;
   final GoPayTransport _transport;
   final int Function() _clockSeconds;
   final String Function() _nonceProvider;
+  final Future<void> Function(Duration) _sleep;
 
   Future<GoPayResponse> initPayment(double amount, String devise, String telephone, String myref, {String? usersId}) async {
     final payload = <String, dynamic>{'amount': amount, 'devise': devise, 'telephone': telephone, 'myref': myref};
@@ -50,32 +60,51 @@ class GoPayClient {
     final apiKey = payout ? config.payoutApiKey : config.paymentApiKey;
     final secret = config.paymentSecretKey;
     if (apiKey.isEmpty || secret.isEmpty) throw const GoPayConfigurationException('GoPAY API key and signing secret must be configured.');
-    final nonce = _nonceProvider();
-    final timestamp = _clockSeconds();
-    final signature = _sign(endpoint, method, payload, nonce, timestamp, secret);
-    final headers = <String, String>{
-      'Accept': 'application/json', 'Content-Type': 'application/json', 'x-api-key': apiKey,
-      'x-signature': signature, 'x-timestamp': '$timestamp', 'x-nonce': nonce,
-    };
-    final request = GoPayHttpRequest(
-      method: method,
-      url: Uri.parse('${config.baseUrl.replaceFirst(RegExp(r'/+$'), '')}$endpoint'),
-      headers: headers,
-      body: method == 'POST' ? jsonEncode(payload) : null,
-    );
-    late final GoPayHttpResponse response;
-    try {
-      response = await _transport.send(request).timeout(config.timeout);
-    } catch (error) {
-      throw GoPayException('GoPAY HTTP request failed: $error', error);
+    // Seules les lectures (GET) sont rejouées : POST/DELETE peuvent avoir des effets de bord.
+    final attempts = method == 'GET' ? config.maxRetries.clamp(0, 10) + 1 : 1;
+    for (var attempt = 1;; attempt++) {
+      final last = attempt >= attempts;
+      // Nouveau nonce / timestamp à chaque tentative (anti-rejeu côté serveur).
+      final nonce = _nonceProvider();
+      final timestamp = _clockSeconds();
+      final signature = _sign(endpoint, method, payload, nonce, timestamp, secret);
+      final headers = <String, String>{
+        'Accept': 'application/json', 'Content-Type': 'application/json', 'x-api-key': apiKey,
+        'x-signature': signature, 'x-timestamp': '$timestamp', 'x-nonce': nonce,
+      };
+      final request = GoPayHttpRequest(
+        method: method,
+        url: Uri.parse('${config.baseUrl.replaceFirst(RegExp(r'/+$'), '')}$endpoint'),
+        headers: headers,
+        body: method == 'POST' ? jsonEncode(payload) : null,
+      );
+      GoPayHttpResponse response;
+      try {
+        response = await _transport.send(request).timeout(config.timeout);
+      } catch (error) {
+        if (!last) {
+          await _sleep(_backoff(attempt));
+          continue;
+        }
+        throw GoPayException('GoPAY HTTP request failed: $error', error);
+      }
+      if (_retryableStatus.contains(response.statusCode) && !last) {
+        await _sleep(_backoff(attempt));
+        continue;
+      }
+      if (response.body.isEmpty) return <String, dynamic>{};
+      try {
+        return jsonDecode(response.body);
+      } catch (error) {
+        throw GoPayException('Invalid JSON response from GoPAY (HTTP ${response.statusCode}).', error, response.statusCode);
+      }
     }
-    if (response.body.isEmpty) return <String, dynamic>{};
-    try {
-      final decoded = jsonDecode(response.body);
-      return decoded;
-    } catch (error) {
-      throw GoPayException('Invalid JSON response from GoPAY.', error);
-    }
+  }
+
+  Duration _backoff(int attempt) {
+    final baseMs = config.retryBaseDelay.inMilliseconds;
+    final jitter = baseMs > 0 ? _jitter.nextInt(baseMs + 1) : 0;
+    return Duration(milliseconds: baseMs * (1 << (attempt - 1)) + jitter);
   }
 
   String _sign(String endpoint, String method, Map<String, dynamic> payload, String nonce, int timestamp, String secret) {

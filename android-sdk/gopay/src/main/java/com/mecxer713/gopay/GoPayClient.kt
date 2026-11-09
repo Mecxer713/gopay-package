@@ -2,18 +2,22 @@ package com.mecxer713.gopay
 
 import org.json.JSONObject
 import org.json.JSONTokener
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.SecureRandom
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import kotlin.random.Random
 
-data class GoPayConfig(
+data class GoPayConfig @JvmOverloads constructor(
     val baseUrl: String = "https://gopay.gooomart.com",
     val paymentApiKey: String,
     val paymentSecretKey: String,
     val payoutApiKey: String = "",
     val timeoutMillis: Int = 30_000,
+    val maxRetries: Int = 2,
+    val retryBaseDelayMillis: Long = 300L,
 )
 
 data class GoPayResponse(
@@ -41,20 +45,44 @@ data class GoPayHttpRequest(
 
 data class GoPayHttpResponse(val statusCode: Int, val body: String)
 
-fun interface GoPayTransport { fun execute(request: GoPayHttpRequest): GoPayHttpResponse }
+fun interface GoPayTransport {
+    fun execute(request: GoPayHttpRequest): GoPayHttpResponse
+}
 
-class GoPayException(message: String, cause: Throwable? = null) : Exception(message, cause)
+class GoPayException(
+    message: String,
+    cause: Throwable? = null,
+    val statusCode: Int? = null,
+) : Exception(message, cause)
+
 class GoPayConfigurationException(message: String) : IllegalArgumentException(message)
+
+object GoPayWebhook {
+    /**
+     * Vérifie la signature HMAC-SHA256 d'un webhook GoPAY entrant.
+     */
+    @JvmStatic
+    fun verify(payload: String, signature: String, secretKey: String): Boolean {
+        if (signature.isBlank() || secretKey.isBlank()) return false
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec(secretKey.toByteArray(Charsets.UTF_8), "HmacSHA256"))
+        val expected = mac.doFinal(payload.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+        return expected.equals(signature.trim(), ignoreCase = true)
+    }
+}
 
 class GoPayClient @JvmOverloads constructor(
     private val config: GoPayConfig,
     private val transport: GoPayTransport = UrlConnectionTransport(config.baseUrl, config.timeoutMillis),
     private val clockSeconds: () -> Long = { System.currentTimeMillis() / 1000 },
     private val nonceProvider: () -> String = { randomNonce() },
+    private val sleeper: (Long) -> Unit = { Thread.sleep(it) },
 ) {
     init {
         require(config.baseUrl.startsWith("https://")) { "GoPay baseUrl must use HTTPS." }
     }
+
+    private val retryableStatusCodes = setOf(408, 429, 500, 502, 503, 504)
 
     @Throws(GoPayException::class)
     fun initPayment(
@@ -64,7 +92,12 @@ class GoPayClient @JvmOverloads constructor(
         reference: String,
         userId: String? = null
     ): GoPayResponse {
-        val payload = linkedMapOf<String, Any>("amount" to amount, "devise" to currency, "telephone" to phone, "myref" to reference)
+        val payload = linkedMapOf<String, Any>(
+            "amount" to amount,
+            "devise" to currency,
+            "telephone" to phone,
+            "myref" to reference
+        )
         userId?.let { payload["users_id"] = it }
         return request("POST", "/api/v3/payment/init", payload, false)
     }
@@ -80,13 +113,21 @@ class GoPayClient @JvmOverloads constructor(
         references: List<String>,
         scheduledDate: String? = null
     ): GoPayResponse {
-        val payload = linkedMapOf<String, Any>("montant" to amount, "devise" to currency, "telephone" to phones, "myref" to references)
+        val payload = linkedMapOf<String, Any>(
+            "montant" to amount,
+            "devise" to currency,
+            "telephone" to phones,
+            "myref" to references
+        )
         scheduledDate?.let { payload["date_denvoi"] = it }
         return request("POST", "/api/payout/v3/transfer", payload, true)
     }
 
-    fun getPayoutTransferStatus(transIdOrMyref: String) = request("GET", "/api/payout/v3/transfer/${pathSegment(transIdOrMyref)}", emptyMap(), true)
-    fun deletePayoutTransfer(transId: String) = request("DELETE", "/api/payout/v3/transfer/${pathSegment(transId)}", emptyMap(), true)
+    fun getPayoutTransferStatus(transIdOrMyref: String) =
+        request("GET", "/api/payout/v3/transfer/${pathSegment(transIdOrMyref)}", emptyMap(), true)
+
+    fun deletePayoutTransfer(transId: String) =
+        request("DELETE", "/api/payout/v3/transfer/${pathSegment(transId)}", emptyMap(), true)
 
     private fun request(method: String, endpoint: String, payload: Map<String, Any>, payout: Boolean): GoPayResponse =
         parseResponse(requestRaw(method, endpoint, payload, payout))
@@ -104,20 +145,70 @@ class GoPayClient @JvmOverloads constructor(
             throw GoPayConfigurationException("GoPAY $keyName must be configured before this operation.")
         }
         if (secret.isBlank()) throw GoPayConfigurationException("GoPAY paymentSecretKey must be configured before this operation.")
-        val nonce = nonceProvider()
-        val timestamp = clockSeconds()
-        val signature = sign(endpoint, method, payload, nonce, timestamp, secret)
-        val headers = mapOf("Accept" to "application/json", "Content-Type" to "application/json", "x-api-key" to apiKey,
-            "x-signature" to signature, "x-timestamp" to timestamp.toString(), "x-nonce" to nonce)
-        val body = if (method == "POST") JSONObject(payload).toString() else null
-        val response = try { transport.execute(GoPayHttpRequest(method, endpoint, headers, body)) }
-        catch (e: Exception) { throw GoPayException("GoPAY HTTP request failed: ${e.message}", e) }
-        if (response.body.isBlank()) return JSONObject()
-        try { return JSONTokener(response.body).nextValue() }
-        catch (e: Exception) { throw GoPayException("Invalid JSON response from GoPAY.", e) }
+
+        // Les requêtes GET sont rejouées en cas d'erreurs transitoires; POST et DELETE ne le sont jamais.
+        val attempts = if (method == "GET") maxOf(0, config.maxRetries) + 1 else 1
+
+        for (attempt in 1..attempts) {
+            val isLastAttempt = attempt >= attempts
+            val nonce = nonceProvider()
+            val timestamp = clockSeconds()
+            val signature = sign(endpoint, method, payload, nonce, timestamp, secret)
+            val headers = mapOf(
+                "Accept" to "application/json",
+                "Content-Type" to "application/json",
+                "x-api-key" to apiKey,
+                "x-signature" to signature,
+                "x-timestamp" to timestamp.toString(),
+                "x-nonce" to nonce
+            )
+            val body = if (method == "POST") JSONObject(payload).toString() else null
+
+            val response = try {
+                transport.execute(GoPayHttpRequest(method, endpoint, headers, body))
+            } catch (e: Exception) {
+                if (!isLastAttempt && (e is IOException || e.cause is IOException)) {
+                    sleepBackoff(attempt)
+                    continue
+                }
+                throw GoPayException("GoPAY HTTP request failed: ${e.message}", e)
+            }
+
+            if (response.statusCode in retryableStatusCodes && !isLastAttempt) {
+                sleepBackoff(attempt)
+                continue
+            }
+
+            if (response.body.isBlank()) return JSONObject()
+            try {
+                return JSONTokener(response.body).nextValue()
+            } catch (e: Exception) {
+                throw GoPayException(
+                    "Invalid JSON response from GoPAY (HTTP ${response.statusCode}).",
+                    e,
+                    response.statusCode
+                )
+            }
+        }
+
+        throw GoPayException("Max retries reached for request to $endpoint")
     }
 
-    internal fun sign(endpoint: String, method: String, payload: Map<String, Any>, nonce: String, timestamp: Long, secret: String): String {
+    private fun sleepBackoff(attempt: Int) {
+        val base = config.retryBaseDelayMillis
+        val exp = base * (1 shl (attempt - 1))
+        val jitter = if (base > 0) Random.nextLong(0, base + 1) else 0L
+        sleeper(exp + jitter)
+    }
+
+    internal fun sign(
+        endpoint: String,
+        method: String,
+        payload: Map<String, Any>,
+        nonce: String,
+        timestamp: Long,
+        secret: String
+    ): String {
         val path = URL(config.baseUrl.trimEnd('/') + endpoint).path
         val params = payload.entries.flatMap { (key, value) ->
             if (value is List<*>) value.mapIndexed { i, item -> encode("$key[$i]") + "=" + encode(queryValue(item)) }
@@ -135,19 +226,27 @@ class GoPayClient @JvmOverloads constructor(
         val status = raw.optString("status")
         return GoPayResponse(
             success = if (raw.has("success")) raw.optBoolean("success") else status == "success",
-            transactionStatus = tx.optNullableString("status"), transId = tx.optNullableString("trans_id"),
-            url = tx.optNullableString("url"), state = tx.optNullableString("state"), message = raw.optNullableString("message"),
-            amount = tx.optNullableString("amount"), currency = tx.optNullableString("currency"),
-            source = tx.optNullableString("source"), date = tx.optNullableString("date"),
+            transactionStatus = tx.optNullableString("status"),
+            transId = tx.optNullableString("trans_id"),
+            url = tx.optNullableString("url"),
+            state = tx.optNullableString("state"),
+            message = raw.optNullableString("message"),
+            amount = tx.optNullableString("amount"),
+            currency = tx.optNullableString("currency"),
+            source = tx.optNullableString("source"),
+            date = tx.optNullableString("date"),
             errorCode = raw.optNullableString("error_code"),
-            balance = tx.optDouble("balance", raw.optDouble("balance")).takeUnless { it.isNaN() }, raw = raw,
+            balance = tx.optDouble("balance", raw.optDouble("balance")).takeUnless { it.isNaN() },
+            raw = raw,
         )
     }
 
     private fun queryValue(value: Any?): String {
-        if (value is Number && value.toDouble().isFinite() && value.toDouble() % 1.0 == 0.0) return value.toLong().toString()
+        if (value is Number && value.toDouble().isFinite() && value.toDouble() % 1.0 == 0.0) return value.toLong()
+            .toString()
         return value.toString()
     }
+
     private fun encode(value: String): String = buildString {
         value.toByteArray(Charsets.UTF_8).forEach { byte ->
             val c = byte.toInt() and 0xff
@@ -160,11 +259,17 @@ class GoPayClient @JvmOverloads constructor(
             }
         }
     }
+
     private fun pathSegment(value: String) = java.net.URLEncoder.encode(value, "UTF-8").replace("+", "%20")
-    companion object { private fun randomNonce(): String = ByteArray(16).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) } }
+
+    companion object {
+        private fun randomNonce(): String =
+            ByteArray(16).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
+    }
 }
 
-private fun JSONObject.optNullableString(key: String): String? = if (!has(key) || isNull(key)) null else opt(key)?.toString()
+private fun JSONObject.optNullableString(key: String): String? =
+    if (!has(key) || isNull(key)) null else opt(key)?.toString()
 
 private class UrlConnectionTransport(baseUrl: String, private val timeoutMillis: Int) : GoPayTransport {
     private val baseUrl = baseUrl.trimEnd('/')
@@ -176,7 +281,9 @@ private class UrlConnectionTransport(baseUrl: String, private val timeoutMillis:
             readTimeout = timeoutMillis
             request.headers.forEach { (key, value) -> setRequestProperty(key, value) }
         }
-        if (request.body != null) { connection.doOutput = true; connection.outputStream.use { it.write(request.body.toByteArray()) } }
+        if (request.body != null) {
+            connection.doOutput = true; connection.outputStream.use { it.write(request.body.toByteArray()) }
+        }
         val status = connection.responseCode
         val stream = if (status >= 400) connection.errorStream else connection.inputStream
         val body = stream?.bufferedReader()?.use { it.readText() } ?: ""

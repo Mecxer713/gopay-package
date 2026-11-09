@@ -4,6 +4,16 @@ Toutes les modifications notables apportées à ce package seront documentées d
 
 Le versionnage suit [SemVer](https://semver.org/).
 
+## [1.6.0] - 2026-11-09
+### Ajouté
+- Mécanisme de retry automatique avec backoff exponentiel et jitter sur les requêtes GET (idempotentes) en cas d'erreur réseau ou HTTP 408/429/5xx.
+- Les requêtes POST et DELETE ne sont jamais rejouées (protection contre les doubles débits ou annulations).
+- Génération d'un nouveau nonce et timestamp à chaque nouvelle tentative pour contrer le rejeu côté passerelle.
+- Classe utilitaire `Mecxer713\GoPay\Webhook\GoPayWebhook::verify()` pour valider les signatures HMAC-SHA256 des notifications webhook entrantes.
+- Encodage systématique des segments d'URL (`rawurlencode`) pour `checkPayment`, `getPayoutTransferStatus`, `deletePayoutTransfer`.
+- Compatibilité accrue avec l'injection de dépendances Symfony (auto-wiring de `GoPayServiceInterface`).
+- Passage de l'analyse statique PHPStan au niveau 8 strict avec typage générique des collections d'itérables.
+
 ## [1.5.1] - 2026-06-29
 ### Corrigé
 - Utilisation de `http_build_query` avec encodage RFC 1738 pour le calcul de la signature HMAC.

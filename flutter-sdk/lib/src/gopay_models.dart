@@ -3,15 +3,27 @@ class GoPayConfig {
     this.baseUrl = 'https://gopay.gooomart.com',
     required this.paymentApiKey,
     required this.paymentSecretKey,
-    required this.payoutApiKey,
+    this.payoutApiKey = '',
     this.timeout = const Duration(seconds: 30),
+    this.maxRetries = 2,
+    this.retryBaseDelay = const Duration(milliseconds: 300),
   });
 
   final String baseUrl;
   final String paymentApiKey;
   final String paymentSecretKey;
+
+  /// Clé Payout — optionnelle. Ne l'embarquez pas dans une application mobile publiée :
+  /// les payouts doivent être émis depuis un backend.
   final String payoutApiKey;
   final Duration timeout;
+
+  /// Nouvelles tentatives pour les requêtes GET en cas d'erreur réseau ou HTTP 408/429/5xx.
+  /// Les requêtes POST/DELETE ne sont jamais rejouées (évite un double débit).
+  final int maxRetries;
+
+  /// Délai de base du backoff exponentiel (avec jitter).
+  final Duration retryBaseDelay;
 }
 
 class GoPayResponse {
@@ -62,9 +74,12 @@ class GoPayResponse {
 }
 
 class GoPayException implements Exception {
-  const GoPayException(this.message, [this.cause]);
+  const GoPayException(this.message, [this.cause, this.statusCode]);
   final String message;
   final Object? cause;
+
+  /// Code HTTP renvoyé par GoPAY, si disponible.
+  final int? statusCode;
   @override
   String toString() => 'GoPayException: $message';
 }

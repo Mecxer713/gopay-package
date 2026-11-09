@@ -42,8 +42,8 @@ class PayoutService
      *
      * @param  float  $montant  Le montant (minimum 500 CDF ou 0.5 USD)
      * @param  string  $devise  La devise (CDF|USD)
-     * @param  array  $telephones  Tableau de numéros (ex. ['0991234567','0811234567'])
-     * @param  array  $myrefs  Tableau de références de transaction
+     * @param  array<int, string>  $telephones  Tableau de numéros (ex. ['0991234567','0811234567'])
+     * @param  array<int, string>  $myrefs  Tableau de références de transaction
      * @param  string|null  $dateDenvoi  Optionnel, planifie l'envoi à une date précise (Y/m/d H:i)
      *
      * @throws GoPayException
@@ -76,7 +76,7 @@ class PayoutService
     public function getPayoutTransferStatus(string $transIdOrMyref): PayoutTransferResponse
     {
         return PayoutTransferResponse::fromArray(
-            $this->client->sendRequest('GET', '/api/payout/v3/transfer/'.$transIdOrMyref, [], 'payout')
+            $this->client->sendRequest('GET', '/api/payout/v3/transfer/'.rawurlencode($transIdOrMyref), [], 'payout')
         );
     }
 
@@ -90,7 +90,7 @@ class PayoutService
     public function deletePayoutTransfer(string $transId): PayoutTransferResponse
     {
         return PayoutTransferResponse::fromArray(
-            $this->client->sendRequest('DELETE', '/api/payout/v3/transfer/'.$transId, [], 'payout')
+            $this->client->sendRequest('DELETE', '/api/payout/v3/transfer/'.rawurlencode($transId), [], 'payout')
         );
     }
 }

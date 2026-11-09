@@ -1,8 +1,9 @@
 parameters:
-    level: 5
+    level: 8
     paths:
         - src
     excludePaths:
         - tests/*
     ignoreErrors:
         - '#Function config_path not found.#'
+

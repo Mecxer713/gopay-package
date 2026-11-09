@@ -1,10 +1,13 @@
 export class GoPayError extends Error {
   public readonly cause?: unknown;
+  /** Code HTTP renvoyé par GoPAY, si disponible. */
+  public readonly statusCode?: number;
 
-  constructor(message: string, cause?: unknown) {
+  constructor(message: string, cause?: unknown, statusCode?: number) {
     super(message);
     this.name = 'GoPayError';
     this.cause = cause;
+    this.statusCode = statusCode;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }

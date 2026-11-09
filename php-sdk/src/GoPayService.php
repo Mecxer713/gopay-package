@@ -21,19 +21,27 @@ class GoPayService implements GoPayServiceInterface
 
     protected PayoutService $payoutService;
 
+    /**
+     * @param  int  $maxRetries  Nouvelles tentatives pour les requêtes GET en cas d'erreur transitoire (POST/DELETE jamais rejoués).
+     * @param  int  $retryBaseDelayMs  Délai de base (ms) du backoff exponentiel.
+     */
     public function __construct(
         protected string $baseUrl = 'https://gopay.gooomart.com',
         protected string $paymentApiKey = '',
         protected string $paymentSecretKey = '',
         protected string $payoutApiKey = '',
-        ?ClientInterface $guzzleClient = null
+        ?ClientInterface $guzzleClient = null,
+        int $maxRetries = 2,
+        int $retryBaseDelayMs = 300
     ) {
         $this->client = new GoPayClient(
             $this->baseUrl,
             $this->paymentApiKey,
             $this->paymentSecretKey,
             $this->payoutApiKey,
-            $guzzleClient
+            $guzzleClient,
+            $maxRetries,
+            $retryBaseDelayMs
         );
 
         $this->paymentService = new PaymentService($this->client);
@@ -95,8 +103,8 @@ class GoPayService implements GoPayServiceInterface
      *
      * @param  float  $montant  Le montant (minimum 500 CDF ou 0.5 USD)
      * @param  string  $devise  La devise (CDF|USD)
-     * @param  array  $telephones  Tableau de numéros (ex. ['0991234567','0811234567'])
-     * @param  array  $myrefs  Tableau de références de transaction
+     * @param  array<int, string>  $telephones  Tableau de numéros (ex. ['0991234567','0811234567'])
+     * @param  array<int, string>  $myrefs  Tableau de références de transaction
      * @param  string|null  $dateDenvoi  Optionnel, planifie l'envoi à une date précise (Y/m/d H:i)
      *
      * @throws GoPayException

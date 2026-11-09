@@ -17,6 +17,8 @@ class Configuration implements ConfigurationInterface
             ->scalarNode('api_key')->defaultValue('')->end()
             ->scalarNode('secret_key')->defaultValue('')->end()
             ->scalarNode('payout_api_key')->defaultValue('')->end()
+            ->integerNode('max_retries')->defaultValue(2)->min(0)->end()
+            ->integerNode('retry_base_delay_ms')->defaultValue(300)->min(0)->end()
             ->end();
 
         return $treeBuilder;

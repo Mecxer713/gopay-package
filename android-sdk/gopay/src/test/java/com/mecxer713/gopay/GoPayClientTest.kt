@@ -100,4 +100,58 @@ class GoPayClientTest {
             assertTrue(e.message!!.contains("payoutApiKey"))
         }
     }
+
+    @Test fun getRequestsRetryOnTransientErrorsAndSucceed() {
+        var callCount = 0
+        val nonces = mutableListOf<String>()
+        val client = GoPayClient(
+            config = config.copy(maxRetries = 2, retryBaseDelayMillis = 0L),
+            transport = GoPayTransport { req ->
+                callCount++
+                req.headers["x-nonce"]?.let { nonces.add(it) }
+                when (callCount) {
+                    1 -> throw java.io.IOException("Socket timeout")
+                    2 -> GoPayHttpResponse(503, "Service Unavailable")
+                    else -> GoPayHttpResponse(200, "{\"success\":true,\"transaction\":{\"status\":\"success\",\"trans_id\":\"RETRY-OK\"}}")
+                }
+            },
+            sleeper = {}
+        )
+        val response = client.checkPayment("my-ref")
+        assertTrue(response.success)
+        assertEquals("RETRY-OK", response.transId)
+        assertEquals(3, callCount)
+        assertEquals(3, nonces.toSet().size) // Each attempt must use a unique fresh nonce
+    }
+
+    @Test fun postRequestsNeverRetry() {
+        var callCount = 0
+        val client = GoPayClient(
+            config = config.copy(maxRetries = 3, retryBaseDelayMillis = 0L),
+            transport = GoPayTransport {
+                callCount++
+                GoPayHttpResponse(500, "Internal Server Error")
+            },
+            sleeper = {}
+        )
+        try {
+            client.initPayment(100.0, "CDF", "+243810000000", "REF-NO-RETRY")
+            fail("Expected GoPayException on 500 error")
+        } catch (_: GoPayException) {
+            assertEquals(1, callCount) // Never retry non-idempotent POST
+        }
+    }
+
+    @Test fun webhookVerification() {
+        val payload = "{\"event\":\"payment.success\",\"trans_id\":\"T1\"}"
+        val secret = "my-secret-key"
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec(secret.toByteArray(), "HmacSHA256"))
+        val validSig = mac.doFinal(payload.toByteArray()).joinToString("") { "%02x".format(it) }
+
+        assertTrue(GoPayWebhook.verify(payload, validSig, secret))
+        assertFalse(GoPayWebhook.verify(payload, "invalid_sig", secret))
+        assertFalse(GoPayWebhook.verify(payload, "", secret))
+        assertFalse(GoPayWebhook.verify(payload, validSig, ""))
+    }
 }

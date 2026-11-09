@@ -6,6 +6,6 @@ import org.junit.Test
 class GoPaySdkVersionTest {
     @Test
     fun sdkVersionIsExposedAsRuntimeConstant() {
-        assertEquals("0.1.0", GoPaySdkVersion.VERSION)
+        assertEquals("0.2.0", GoPaySdkVersion.VERSION)
     }
 }

@@ -51,7 +51,7 @@ class PaymentService
     public function checkPayment(string $ref): PaymentResponse
     {
         return PaymentResponse::fromArray(
-            $this->client->sendRequest('GET', '/api/v3/payment/check/'.$ref, [], 'payment')
+            $this->client->sendRequest('GET', '/api/v3/payment/check/'.rawurlencode($ref), [], 'payment')
         );
     }
 }

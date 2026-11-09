@@ -21,6 +21,10 @@ interface GoPayServiceInterface
      */
     public function getPayoutTransfers(): array;
 
+    /**
+     * @param  array<int, string>  $telephones
+     * @param  array<int, string>  $myrefs
+     */
     public function sendPayoutTransfer(float $montant, string $devise, array $telephones, array $myrefs, ?string $dateDenvoi = null): PayoutTransferResponse;
 
     public function getPayoutTransferStatus(string $transIdOrMyref): PayoutTransferResponse;

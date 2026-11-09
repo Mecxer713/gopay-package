@@ -14,8 +14,8 @@ use Mecxer713\GoPay\GoPayService;
  * @method static PaymentResponse initPayment(float $amount, string $devise, string $telephone, string $myref, ?string $usersId = null)
  * @method static PaymentResponse checkPayment(string $ref)
  * @method static PayoutBalanceResponse getPayoutBalance()
- * @method static array getPayoutTransfers()
- * @method static PayoutTransferResponse sendPayoutTransfer(float $montant, string $devise, array $telephones, array $myrefs, ?string $dateDenvoi = null)
+ * @method static array<string, mixed> getPayoutTransfers()
+ * @method static PayoutTransferResponse sendPayoutTransfer(float $montant, string $devise, array<int, string> $telephones, array<int, string> $myrefs, ?string $dateDenvoi = null)
  * @method static PayoutTransferResponse getPayoutTransferStatus(string $transIdOrMyref)
  * @method static PayoutTransferResponse deletePayoutTransfer(string $transId)
  *

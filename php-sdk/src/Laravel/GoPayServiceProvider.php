@@ -34,14 +34,17 @@ class GoPayServiceProvider extends ServiceProvider
             $config = $app['config']->get('gopay');
 
             return new GoPayService(
-                baseUrl: $config['base_url'] ?? 'https://gopay.gooomart.com',
-                paymentApiKey: $config['api_key'] ?? '',
-                paymentSecretKey: $config['secret_key'] ?? '',
-                payoutApiKey: $config['payout_api_key'] ?? ''
+                baseUrl: (string) ($config['base_url'] ?? 'https://gopay.gooomart.com'),
+                paymentApiKey: (string) ($config['api_key'] ?? ''),
+                paymentSecretKey: (string) ($config['secret_key'] ?? ''),
+                payoutApiKey: (string) ($config['payout_api_key'] ?? ''),
+                maxRetries: (int) ($config['max_retries'] ?? 2),
+                retryBaseDelayMs: (int) ($config['retry_base_delay_ms'] ?? 300)
             );
         });
 
         $this->app->alias(GoPayServiceInterface::class, 'gopay');
+        $this->app->alias(GoPayServiceInterface::class, GoPayService::class);
     }
 
     /**

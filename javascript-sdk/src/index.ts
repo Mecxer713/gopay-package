@@ -1,4 +1,4 @@
-export { GoPayClient } from './client';
-export * from './models';
-export * from './errors';
-export { phpUrlEncode, buildQueryString, computeSignature, generateNonce } from './hmac';
+export { GoPayClient } from './client.js';
+export * from './models.js';
+export * from './errors.js';
+export { phpUrlEncode, buildQueryString, computeSignature, generateNonce } from './hmac.js';

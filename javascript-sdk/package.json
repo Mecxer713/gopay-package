@@ -1,24 +1,38 @@
 {
   "name": "gopay-js",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Official JavaScript and TypeScript client for GoPAY Mobile Money payment and payout gateway.",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "tsc",
-    "pretest": "npm run build",
-    "test": "node --test dist/test/*.js",
-    "prepublishOnly": "npm run build"
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('dist-test',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsc -p tsconfig.build.cjs.json && tsc -p tsconfig.build.esm.json && node scripts/postbuild.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "tsc -p tsconfig.json",
+    "test": "node --test dist-test/test/client.test.js",
+    "test:package": "npm run build && node test/package-smoke.mjs",
+    "prepublishOnly": "npm run build && npm test"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Mecxer713/gopay-js.git"
+    "url": "git+https://github.com/Mecxer713/gopay-package.git",
+    "directory": "javascript-sdk"
   },
   "keywords": [
     "gopay",
@@ -35,7 +49,7 @@
   "author": "Mecxer713 <Mecxer@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Mecxer713/gopay-js/issues"
+    "url": "https://github.com/Mecxer713/gopay-package/issues"
   },
   "homepage": "https://gopay.gooomart.com",
   "devDependencies": {

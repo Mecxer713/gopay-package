@@ -12,6 +12,9 @@ on:
       - ".github/workflows/javascript-sdk.yml"
     tags: ["js-v*"]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -29,9 +32,47 @@ jobs:
       - name: Install dependencies
         working-directory: javascript-sdk
         run: npm ci
-      - name: Build TypeScript
+      - name: Type check
         working-directory: javascript-sdk
-        run: npm run build
-      - name: Run Tests
+        run: npm run typecheck
+      - name: Run tests
         working-directory: javascript-sdk
         run: npm test
+      - name: Build dual CJS/ESM package and smoke test
+        working-directory: javascript-sdk
+        run: npm run test:package
+      - name: Validate package contents
+        working-directory: javascript-sdk
+        run: npm pack --dry-run
+
+  publish:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/js-v')
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # requis pour npm provenance (attestation SLSA)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+          cache-dependency-path: javascript-sdk/package-lock.json
+      - name: Check tag matches package.json version and changelog
+        working-directory: javascript-sdk
+        shell: bash
+        run: |
+          tag_version="${GITHUB_REF_NAME#js-v}"
+          pkg_version="$(node -p "require('./package.json').version")"
+          test "${tag_version}" = "${pkg_version}"
+          grep -Eq "^## \[?${tag_version//./\\.}\]?" CHANGELOG.md
+      - run: npm ci
+        working-directory: javascript-sdk
+      - name: Publish to npm with provenance
+        working-directory: javascript-sdk
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

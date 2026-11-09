@@ -1,1 +1,2 @@
-const String gopaySdkVersion = '0.2.0';
+/// Version actuelle du SDK GoPAY Flutter & Dart.
+const String gopaySdkVersion = '0.2.1';

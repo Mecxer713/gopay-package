@@ -1,6 +1,6 @@
 name: gopay
-description: GoPAY Mobile Money payments and payouts client for Flutter and Dart (Android, iOS, Web, desktop). HMAC-SHA256 signed requests.
-version: 0.2.0
+description: Official GoPAY SDK for Flutter & Dart. Accept Mobile Money payments (M-Pesa, Airtel Money, Orange Money) and send payouts in DRC (CDF/USD). Cross-platform with Web and WASM support.
+version: 0.2.1
 homepage: https://gopay.gooomart.com
 repository: https://github.com/Mecxer713/gopay-package/tree/main/flutter-sdk
 issue_tracker: https://github.com/Mecxer713/gopay-package/issues
@@ -9,7 +9,7 @@ topics:
   - mobile-money
   - fintech
   - payout
-  - api-client
+  - mpesa
 
 environment:
   sdk: '>=3.2.0 <4.0.0'

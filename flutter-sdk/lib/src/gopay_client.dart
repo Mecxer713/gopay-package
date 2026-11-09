@@ -6,7 +6,9 @@ import 'package:crypto/crypto.dart';
 import 'gopay_models.dart';
 import 'gopay_transport.dart';
 
+/// Client officiel pour interagir avec l'API GoPAY Mobile Money (Paiements et Payouts).
 class GoPayClient {
+  /// Crée une instance de [GoPayClient] avec la configuration fournie.
   GoPayClient(
     this.config, {
     GoPayTransport? transport,
@@ -23,30 +25,56 @@ class GoPayClient {
   static const _retryableStatus = {408, 429, 500, 502, 503, 504};
   static final _jitter = Random();
 
+  /// Configuration du client (clés marchandes, base URL, timeout, retry).
   final GoPayConfig config;
   final GoPayTransport _transport;
   final int Function() _clockSeconds;
   final String Function() _nonceProvider;
   final Future<void> Function(Duration) _sleep;
 
-  Future<GoPayResponse> initPayment(double amount, String devise, String telephone, String myref, {String? usersId}) async {
+  /// Initie une demande de paiement Mobile Money (M-Pesa, Airtel Money, Orange Money).
+  Future<GoPayResponse> initPayment(
+    double amount,
+    String devise,
+    String telephone,
+    String myref, {
+    String? usersId,
+  }) async {
     final payload = <String, dynamic>{'amount': amount, 'devise': devise, 'telephone': telephone, 'myref': myref};
     if (usersId != null) payload['users_id'] = usersId;
     return _request('POST', '/api/v3/payment/init', payload);
   }
 
-  Future<GoPayResponse> checkPayment(String ref) => _request('GET', '/api/v3/payment/check/${Uri.encodeComponent(ref)}', const {});
-  Future<GoPayResponse> getPayoutBalance() => _request('GET', '/api/payout/v3/balance', const {}, payout: true);
-  Future<Object?> getPayoutTransfers() => _requestRaw('GET', '/api/payout/v3/transfer', const {}, payout: true);
+  /// Vérifie le statut d'une transaction de paiement par sa référence marchand.
+  Future<GoPayResponse> checkPayment(String ref) =>
+      _request('GET', '/api/v3/payment/check/${Uri.encodeComponent(ref)}', const {});
 
-  Future<GoPayResponse> sendPayoutTransfer(double montant, String devise, List<String> telephones, List<String> myrefs, {String? dateDenvoi}) {
+  /// Récupère le solde disponible du compte Payout (Wallet sortant).
+  Future<GoPayResponse> getPayoutBalance() =>
+      _request('GET', '/api/payout/v3/balance', const {}, payout: true);
+
+  /// Liste l'ensemble des transferts Payout émis.
+  Future<Object?> getPayoutTransfers() =>
+      _requestRaw('GET', '/api/payout/v3/transfer', const {}, payout: true);
+
+  /// Émet un transfert de fonds Payout vers une liste de numéros de téléphone.
+  Future<GoPayResponse> sendPayoutTransfer(
+    double montant,
+    String devise,
+    List<String> telephones,
+    List<String> myrefs, {
+    String? dateDenvoi,
+  }) {
     final payload = <String, dynamic>{'montant': montant, 'devise': devise, 'telephone': telephones, 'myref': myrefs};
     if (dateDenvoi != null) payload['date_denvoi'] = dateDenvoi;
     return _request('POST', '/api/payout/v3/transfer', payload, payout: true);
   }
 
+  /// Consulte le statut détaillé d'un transfert Payout par son identifiant ou référence.
   Future<GoPayResponse> getPayoutTransferStatus(String transIdOrMyref) =>
       _request('GET', '/api/payout/v3/transfer/${Uri.encodeComponent(transIdOrMyref)}', const {}, payout: true);
+
+  /// Annule un transfert Payout au statut EN ATTENTE.
   Future<GoPayResponse> deletePayoutTransfer(String transId) =>
       _request('DELETE', '/api/payout/v3/transfer/${Uri.encodeComponent(transId)}', const {}, payout: true);
 

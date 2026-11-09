@@ -1,3 +1,8 @@
+## 0.2.1
+
+- Enhanced dartdoc API documentation across all public classes, methods, and fields.
+- Enriched search metadata, descriptions, and keywords for pub.dev discoverability.
+
 ## 0.2.0
 
 - **Flutter Web support**: the default transport is now `HttpGoPayTransport` (based on `package:http`), which works on Android, iOS, desktop and Web.

@@ -8,7 +8,10 @@ import 'gopay_transport.dart';
 ///
 /// Conservé pour compatibilité ; préférer [HttpGoPayTransport] (transport par défaut).
 class IoGoPayTransport implements GoPayTransport {
+  /// Crée un [IoGoPayTransport] avec le timeout spécifié.
   IoGoPayTransport(this.timeout);
+
+  /// Timeout réseau par requête.
   final Duration timeout;
 
   @override
@@ -28,4 +31,3 @@ class IoGoPayTransport implements GoPayTransport {
     }
   }
 }
-
